@@ -6,7 +6,7 @@ int main(int argc, char **argv) {
   Canvas canvas(640, 360, "Bokeh");
   canvas.make_active();
 
-  while (!glfwWindowShouldClose(Canvas::window())) {}
+  Canvas::run();
 
   return 0;
 }

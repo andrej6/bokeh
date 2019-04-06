@@ -7,6 +7,7 @@ set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "C:\\GraphicsLibraries")
 foreach(basename
     main.cpp
     canvas.cpp
+    camera.cpp
     mesh.cpp
     util.cpp
     )

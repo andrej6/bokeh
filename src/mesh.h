@@ -1,3 +1,4 @@
+// A half-edge mesh data structure.
 #ifndef MESH_H_
 #define MESH_H_
 

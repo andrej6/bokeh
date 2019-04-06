@@ -19,7 +19,7 @@ void glfw_error_cb(int err, const char *msg) {
 }
 
 Canvas::Canvas(int width, int height, const char *title) :
-  _width(width), _height(height), _moved(false)
+  _width(width), _height(height), _moved(false), _continue_updates(true)
 {
   lazy_init_glfw();
 
@@ -29,7 +29,8 @@ Canvas::Canvas(int width, int height, const char *title) :
 }
 
 Canvas::Canvas(Canvas &&other) :
-  _width(other._width), _height(other._height), _moved(false), _window(other._window)
+  _width(other._width), _height(other._height), _moved(false), _continue_updates(true),
+  _window(other._window)
 {
   other._moved = true;
   if (_s_active == &other) {
@@ -70,6 +71,20 @@ Canvas::~Canvas() {
       terminate_gl();
     }
   }
+}
+
+double Canvas::aspect() {
+  int w, h;
+  glfwGetFramebufferSize(_s_active->_window, &w, &h);
+  return double(w) / h;
+}
+
+void Canvas::run_with_event_fn(void (*event_fn)()) {
+  while (!glfwWindowShouldClose(_s_active->_window) && _s_active->_continue_updates) {
+    event_fn();
+    _s_active->update();
+  }
+  _s_active->_continue_updates = true;
 }
 
 void Canvas::lazy_init_glfw() {
