@@ -21,17 +21,17 @@ const char *gl_error_to_string(GLenum err);
 
 // Writes a message to the error stream upon any errors. If `warn` is false,
 // terminates the application if any errors were detected.
-void handle_gl_error(bool warn = false);
+void handle_gl_error(const char *msg, bool warn = false);
 
 // Writes a message to the error stream upon any shader compilation errors, and
 // prints the error log. If `warn` is false, terminates the application if any
 // errors were detected.
-void handle_shader_error(GLuint shader, bool warn = false);
+void handle_shader_error(const char *msg, GLuint shader, bool warn = false);
 
 // Writes a message to the error stream upon and program linking errors, and
 // prints the error log. If `warn` is false, terminates the application if any
 // errors were detected.
-void handle_program_error(GLuint program, bool warn = false);
+void handle_program_error(const char *msg, GLuint program, bool warn = false);
 
 // Generate a random floating-point value in the range 0 to 1.
 double randf();

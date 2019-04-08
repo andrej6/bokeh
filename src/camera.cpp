@@ -31,10 +31,18 @@ void Camera::rotate(float rx, float ry) {
   ry *= _rotate_speed;
 
   float angle = rad_to_deg(acos(glm::dot(_up, direction())));
-  if (angle + ry > 160.0) {
-    ry = 160.0 - angle;
-  } else if (angle + ry < -160.0) {
-    ry = -160.0 - angle;
+  if (angle - ry > 175.0 && ry < 0.0) {
+    if (angle > 175.0) {
+      ry = 0.0;
+    } else {
+      ry = 175.0 - angle;
+    }
+  } else if (angle - ry < 5.0 && ry > 0.0) {
+    if (angle < 5.0) {
+      ry = 0.0;
+    } else {
+      ry = angle - 5.0;
+    }
   }
 
   glm::mat4 m;

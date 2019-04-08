@@ -1,9 +1,10 @@
 #include <iostream>
 
 #include "canvas.h"
+#include "bokeh_canvas.h"
 
 int main(int argc, char **argv) {
-  Canvas canvas(640, 360, "Bokeh");
+  BokehCanvas canvas(640, 480, { glm::vec3(1.0, 4.5, 3.0), glm::vec3(0.0) });
   canvas.make_active();
 
   Canvas::run();

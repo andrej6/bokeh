@@ -5,6 +5,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include <cstdint>
+
 // A top-level window and OpenGL context manager class.
 //
 // Most methods are static and operate on the active Canvas. A Canvas
@@ -28,6 +30,9 @@
 // Canvas will need to be made active and run for updates to resume.
 class Canvas {
   public:
+    typedef uint32_t canvas_id;
+    static const canvas_id NONE;
+
     Canvas(int width, int height, const char *title);
 
     // Can't be copied, but can be moved
@@ -39,15 +44,25 @@ class Canvas {
     virtual ~Canvas();
 
     // Make this Canvas the active Canvas.
-    void make_active() const {
-      _s_active = (Canvas*) this;
-      glfwMakeContextCurrent(_window);
-      glfwSwapInterval(1);
-      lazy_init_glew();
-    }
+    void make_active() const;
+
+    canvas_id id() const { return _id; }
 
     // Return a pointer to the active Canvas, or NULL if there is none.
     static Canvas *active() { return _s_active; }
+
+    template <typename C>
+      static C *active_as() { return static_cast<C*>(_s_active); }
+
+    // Return the ID of the currently active canvas, or Canvas::NONE if there
+    // is none. Canvas ID's are unique and persist when a Canvas is moved.
+    static canvas_id active_id() {
+      if (_s_active) {
+        return _s_active->_id;
+      } else {
+        return NONE;
+      }
+    }
 
     // Begin updates on the active Canvas, polling (rather than waiting) for
     // events before each update.
@@ -81,6 +96,7 @@ class Canvas {
     static void lazy_init_glew();
     static void terminate_gl();
 
+    static canvas_id _s_next_id;
     static unsigned _s_num_canvases;
     static Canvas *_s_active;
     static int _s_gl_initialized;
@@ -92,11 +108,13 @@ class Canvas {
     // events before each update.
     static void run_with_event_fn(void (*event_fn)());
 
+    canvas_id _id;
     unsigned _width, _height;
     bool _moved;
     bool _continue_updates;
 
     GLFWwindow *_window;
+    GLuint _vao;
 };
 
 #endif /* CANVAS_H_ */

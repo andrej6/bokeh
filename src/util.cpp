@@ -32,12 +32,12 @@ const char *gl_error_to_string(GLenum err) {
   }
 }
 
-void handle_gl_error(const std::string &msg, bool warn) {
+void handle_gl_error(const char *msg, bool warn) {
   GLenum error;
   bool err = false;
   while ((error = glGetError()) != GL_NO_ERROR) {
     err = true;
-    if (!msg.empty()) {
+    if (msg) {
       *gl_error_stream << '[' << msg << "] ";
     }
 
@@ -49,7 +49,7 @@ void handle_gl_error(const std::string &msg, bool warn) {
   }
 }
 
-void handle_shader_error(GLuint shader, bool warn) {
+void handle_shader_error(const char *msg, GLuint shader, bool warn) {
   GLint compile_status;
   glGetShaderiv(shader, GL_COMPILE_STATUS, &compile_status);
   if (compile_status == GL_FALSE) {
@@ -57,9 +57,14 @@ void handle_shader_error(GLuint shader, bool warn) {
     glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_len);
     char *log = new char[log_len];
     glGetShaderInfoLog(shader, log_len, NULL, log);
-    *gl_error_stream << "SHADER COMPILE ERROR ======"
+
+    if (msg) {
+      *gl_error_stream << '[' << msg << "]\n";
+    }
+
+    *gl_error_stream << "SHADER COMPILE ERROR ======\n"
                   << log
-                  <<  "\n===========================" << std::endl;
+                  <<    "===========================" << std::endl;
   }
 
   if (!(warn || compile_status == GL_TRUE)) {
@@ -67,7 +72,7 @@ void handle_shader_error(GLuint shader, bool warn) {
   }
 }
 
-void handle_program_error(GLuint program, bool warn) {
+void handle_program_error(const char *msg, GLuint program, bool warn) {
   GLint link_status;
   glGetProgramiv(program, GL_LINK_STATUS, &link_status);
   if (link_status == GL_FALSE) {
@@ -75,6 +80,11 @@ void handle_program_error(GLuint program, bool warn) {
     glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_len);
     char *log = new char[log_len];
     glGetProgramInfoLog(program, log_len, NULL, log);
+
+    if (msg) {
+      *gl_error_stream << '[' << msg << "]\n";
+    }
+
     *gl_error_stream << "SHADER COMPILE ERROR ======"
                   << log
                   <<  "\n===========================" << std::endl;
