@@ -145,12 +145,12 @@ void Canvas::lazy_init_glew() {
 }
 
 void Canvas::terminate_gl() {
-  delete_all_shader_data();
   glfwTerminate();
   _s_gl_initialized &= ~_GLFW_INITED;
 }
 
 void Canvas::destroy_resources() {
+  delete_all_shader_data();
   glfwDestroyWindow(_window);
   _window = NULL;
 }

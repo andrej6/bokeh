@@ -37,7 +37,15 @@ void bokeh_mousebuttoncb(GLFWwindow *window, int button, int action, int mods) {
 
 void bokeh_cursorposcb(GLFWwindow *window, double x, double y) {
   BokehCanvas *canvas = (BokehCanvas*) glfwGetWindowUserPointer(window);
-  double prevx = canvas->_mouse.x, prevy = canvas->_mouse.y;
+  double prevx, prevy;
+  if (canvas->_mouse.inited) {
+    prevx = canvas->_mouse.x;
+    prevy = canvas->_mouse.y;
+  } else {
+    prevx = x;
+    prevy = y;
+    canvas->_mouse.inited = true;
+  }
 
   uint32_t buttons = canvas->_mouse.buttons;
   if (buttons & MOUSE_BUTTON_LEFT) {

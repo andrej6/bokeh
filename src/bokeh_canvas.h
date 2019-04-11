@@ -19,6 +19,8 @@
 #define MOUSE_BUTTON_MIDDLE 0x4
 
 struct MouseInfo {
+  MouseInfo() : inited(false), buttons(0) {}
+  bool inited;
   double x, y;
   uint32_t buttons;
 };
