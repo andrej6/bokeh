@@ -2,11 +2,15 @@
 #define UTIL_H_
 
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include <cstdint>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+
+#include <glm/glm.hpp>
 
 #define EPSILON 0.00001f
 extern const double PI;
@@ -39,6 +43,14 @@ double randf();
 // Generate a random integer.
 uint32_t randi();
 
+// Generate a random vector in the [-1, 1] cube centered at the origin.
+static inline glm::vec3 randvec() {
+  float x = 2*randf() - 1.0,
+        y = 2*randf() - 1.0,
+        z = 2*randf() - 1.0;
+  return glm::vec3(x, y, z);
+}
+
 // Convert degrees to radians.
 static inline double deg_to_rad(double d) {
   return d * PI / 180.0;
@@ -48,5 +60,16 @@ static inline double deg_to_rad(double d) {
 static inline double rad_to_deg(double r) {
   return r * 180.0 / PI;
 }
+
+// Split a string into substrings delimited by the characters in `delims`. If `multi` is
+// true, split() will treat any sequence of consecutive characters in `delims` as a single
+// delimiter, and not produce an empty string for each consecutive pair.
+std::vector<std::string> split(
+    const std::string &str,
+    const char *delims = " \t\n",
+    bool multi=true);
+
+// Strip a string of leading and trailing whitespace.
+std::string strip(const std::string &str);
 
 #endif /* UTIL_H_ */

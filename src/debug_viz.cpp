@@ -50,7 +50,8 @@ void DebugViz::clear() {
 void DebugViz::draw() {
   lazy_init_shaders();
   glUseProgram(_shader.program);
-  handle_gl_error("Using DebugViz program");
+  glBindBuffer(GL_ARRAY_BUFFER, _vbuf);
+  handle_gl_error("[DebugViz::draw] Using DebugViz program");
 
   if (_dirty) {
     pack_data();
@@ -60,6 +61,12 @@ void DebugViz::draw() {
     return;
   }
 
+  glVertexAttribPointer(_shader.vpos_loc, 3, GL_FLOAT, false,
+      sizeof(DebugVizPoint), (void*) offsetof(DebugVizPoint, pos));
+  glVertexAttribPointer(_shader.vcol_loc, 4, GL_FLOAT, false,
+      sizeof(DebugVizPoint), (void*) offsetof(DebugVizPoint, col));
+  handle_gl_error("[DebugViz::draw] After setting attrib ptrs");
+
   if (_depth_test) {
     glEnable(GL_DEPTH_TEST);
   } else {
@@ -67,6 +74,7 @@ void DebugViz::draw() {
   }
   glLineWidth(_line_width);
   glDrawArrays(GL_LINES, 0, 2 * _lines.size());
+  handle_gl_error("[DebugViz::draw] Leaving function");
 }
 
 void DebugViz::set_viewmat(const glm::mat4 &view) {
@@ -75,6 +83,7 @@ void DebugViz::set_viewmat(const glm::mat4 &view) {
     return;
   }
 
+  glUseProgram(_shader.program);
   glUniformMatrix4fv(_shader.viewmat_loc, 1, false, (float*) &view);
 }
 
@@ -84,6 +93,7 @@ void DebugViz::set_projmat(const glm::mat4 &proj) {
     return;
   }
 
+  glUseProgram(_shader.program);
   glUniformMatrix4fv(_shader.projmat_loc, 1, false, (float*) &proj);
 }
 
@@ -93,8 +103,9 @@ void DebugViz::pack_data() {
     return;
   }
 
+  glUseProgram(_shader.program);
   glBindBuffer(GL_ARRAY_BUFFER, _vbuf);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(LineSegment) * _lines.size(), _lines.data(), GL_STREAM_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(LineSegment) * _lines.size(), _lines.data(), GL_DYNAMIC_DRAW);
   handle_gl_error("Packing DebugViz lines");
   _dirty = false;
 }
@@ -138,7 +149,6 @@ void DebugViz::lazy_init_shaders() {
 
   handle_gl_error("[DebugViz::lazy_init_shaders] Before using program");
   glUseProgram(_shader.program);
-  handle_gl_error("[DebugViz::lazy_init_shaders] After using program");
   glEnableVertexAttribArray(_shader.vpos_loc);
   glEnableVertexAttribArray(_shader.vcol_loc);
   handle_gl_error("[DebugViz::lazy_init_shaders] After enabling attribs");
@@ -151,10 +161,4 @@ void DebugViz::lazy_init_shaders() {
   glGenBuffers(1, &_vbuf);
   glBindBuffer(GL_ARRAY_BUFFER, _vbuf);
   handle_gl_error("[DebugViz::lazy_init_shaders] Initializing DebugViz vertex buffer");
-
-  glVertexAttribPointer(_shader.vpos_loc, 3, GL_FLOAT, false,
-      sizeof(DebugVizPoint), (void*) offsetof(DebugVizPoint, pos));
-  glVertexAttribPointer(_shader.vcol_loc, 4, GL_FLOAT, false,
-      sizeof(DebugVizPoint), (void*) offsetof(DebugVizPoint, col));
-  handle_gl_error("[DebugViz::lazy_init_shaders] After setting attrib ptrs");
 }

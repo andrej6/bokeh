@@ -19,6 +19,7 @@ endforeach(basename)
 
 foreach(basename
     dbviz.vert dbviz.frag
+    mesh_basic_gouraud.vert mesh_basic_gouraud.frag
     )
   configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/${basename}
@@ -41,7 +42,6 @@ include_directories(${GLM_INCLUDE_DIRS})
 include_directories(${CMAKE_BINARY_DIR})
 
 target_link_libraries(bokeh
-  m
   ${OPENGL_LIBRARIES}
   ${GLEW_LIBRARIES}
   ${GLFW_LIBRARIES}
@@ -52,6 +52,7 @@ if (UNIX)
     PROPERTIES
     COMPILE_FLAGS "-g -Wall -pedantic"
     )
+  target_link_libraries(bokeh m)
 elseif(MSVC)
   set_target_properties(bokeh
     PROPERTIES

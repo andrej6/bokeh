@@ -94,9 +94,29 @@ void Canvas::make_active() const {
 }
 
 double Canvas::aspect() {
+  if (!_s_active) {
+    return 1.0;
+  }
+
   int w, h;
   glfwGetFramebufferSize(_s_active->_window, &w, &h);
   return double(w) / h;
+}
+
+int Canvas::width() {
+  if (!_s_active) {
+    return 0;
+  }
+
+  return _s_active->_width;
+}
+
+int Canvas::height() {
+  if (!_s_active) {
+    return 0;
+  }
+
+  return _s_active->_height;
 }
 
 void Canvas::run_with_event_fn(void (*event_fn)()) {

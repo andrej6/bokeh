@@ -105,3 +105,72 @@ double randf() {
 uint32_t randi() {
   return rand_engine();
 }
+
+static inline bool char_in_str(char c, const char *str) {
+  const char *cur = str;
+  while (*cur != '\0') {
+    if (c == *cur) {
+      return true;
+    }
+    ++cur;
+  }
+  return false;
+}
+
+std::vector<std::string> split(const std::string &str, const char *delims, bool multi) {
+  if (str.empty()) {
+    return std::vector<std::string>();
+  }
+
+  std::vector<std::string> vec;
+  std::string accum;
+  bool delim = false;
+  for (unsigned i = 0; i < str.size(); ++i) {
+    if (!char_in_str(str[i], delims)) {
+      if (multi && delim) {
+        vec.push_back(accum);
+        accum.clear();
+        --i;
+        delim = false;
+      } else {
+        accum += str[i];
+      }
+
+      continue;
+    }
+
+    if (!multi) {
+      vec.push_back(accum);
+      accum.clear();
+    } else {
+      delim = true;
+    }
+  }
+
+  if (!accum.empty()) {
+    vec.push_back(accum);
+  }
+
+  return vec;
+}
+
+std::string strip(const std::string &str) {
+  unsigned i, j;
+
+  for (i = 0; i < str.size(); ++i) {
+    char c = str[i];
+    if (!char_in_str(c, " \t\n")) {
+      break;
+    }
+  }
+
+  for (j = str.size() - 1; j < str.size(); --j) {
+    char c = str[j];
+    if (!char_in_str(c, " \t\n")) {
+      break;
+    }
+  }
+
+  ++j;
+  return str.substr(i, j-i);
+}

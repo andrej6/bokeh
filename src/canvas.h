@@ -80,6 +80,9 @@ class Canvas {
     // framebuffer.
     static double aspect();
 
+    static int width();
+    static int height();
+
   protected:
     // Get a pointer to this Canvas's GLFW window object.
     GLFWwindow *window() { return _window; }
