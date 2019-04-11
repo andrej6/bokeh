@@ -77,9 +77,9 @@ class DebugViz {
         const glm::vec4 &ca, const glm::vec4 &cb);
     void pack_data();
 
-    Canvas::canvas_id _canvas;
     bool _dirty;
     DebugVizShaderData _shader;
+    GLuint _vao;
     GLuint _vbuf;
 
     bool _depth_test;

@@ -238,3 +238,11 @@ GLuint program_loc(const char *program_name) {
   ProgramInfo &pinfo = program_info.find(itr->second)->second;
   return pinfo.index;
 }
+
+void delete_all_shader_data() {
+  shader_names.clear();
+  shader_info.clear();
+
+  program_names.clear();
+  program_info.clear();
+}

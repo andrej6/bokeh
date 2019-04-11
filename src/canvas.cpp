@@ -5,6 +5,7 @@
 #include <cstdlib>
 
 #include "util.h"
+#include "shader_store.h"
 
 #define _GLFW_INITED 0x1
 #define _GLEW_INITED 0x2
@@ -21,7 +22,7 @@ void glfw_error_cb(int err, const char *msg) {
 }
 
 Canvas::Canvas(int width, int height, const char *title) :
-  _id(_s_next_id), _width(width), _height(height), _moved(false), _continue_updates(true), _vao(0)
+  _id(_s_next_id), _width(width), _height(height), _moved(false), _continue_updates(true)
 {
   lazy_init_glfw();
 
@@ -33,7 +34,7 @@ Canvas::Canvas(int width, int height, const char *title) :
 
 Canvas::Canvas(Canvas &&other) :
   _id(other._id), _width(other._width), _height(other._height), _moved(false),
-  _continue_updates(true), _window(other._window), _vao(other._vao)
+  _continue_updates(true), _window(other._window)
 {
   other._moved = true;
   if (_s_active == &other) {
@@ -54,7 +55,6 @@ Canvas &Canvas::operator=(Canvas &&other) {
   _width = other._width;
   _height = other._height;
   _window = other._window;
-  _vao = other._vao;
 
   if (_s_active == &other) {
     make_active();
@@ -83,14 +83,6 @@ void Canvas::make_active() const {
   glfwMakeContextCurrent(_window);
   glfwSwapInterval(1);
   lazy_init_glew();
-
-  if (_vao == 0) {
-    glGenVertexArrays(1, (GLuint*) &_vao);
-    handle_gl_error("[Canvas::make_active] Generating canvas VAO");
-  }
-
-  glBindVertexArray(_vao);
-  handle_gl_error("[Canvas::make_active] Binding canvas VAO");
 }
 
 double Canvas::aspect() {
@@ -153,12 +145,12 @@ void Canvas::lazy_init_glew() {
 }
 
 void Canvas::terminate_gl() {
+  delete_all_shader_data();
   glfwTerminate();
   _s_gl_initialized &= ~_GLFW_INITED;
 }
 
 void Canvas::destroy_resources() {
-  glDeleteVertexArrays(1, &_vao);
   glfwDestroyWindow(_window);
   _window = NULL;
 }

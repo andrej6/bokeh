@@ -57,9 +57,17 @@ void bokeh_cursorposcb(GLFWwindow *window, double x, double y) {
 }
 
 void bokeh_keyboardcb(GLFWwindow *window, int key, int scancode, int action, int mods) {
-  if (key == GLFW_KEY_R && action == GLFW_PRESS) {
-    BokehCanvas *canvas = (BokehCanvas*) glfwGetWindowUserPointer(window);
-    canvas->randomize_buns();
+  BokehCanvas *canvas = (BokehCanvas*) glfwGetWindowUserPointer(window);
+  if (action == GLFW_PRESS) {
+    switch (key) {
+      case GLFW_KEY_R:
+        canvas->randomize_buns();
+        break;
+
+      case GLFW_KEY_D:
+        canvas->_dbviz.toggle_depth_test();
+        break;
+    }
   }
 }
 
@@ -74,7 +82,6 @@ BokehCanvas::BokehCanvas(int width, int height, const BokehCanvasConf &conf)
   glfwSetCursorPosCallback(window, bokeh_cursorposcb);
   glfwSetKeyCallback(window, bokeh_keyboardcb);
 
-  /*
   float size = 2.0;
   glm::vec3 o(conf.cam_poi);
   glm::vec3 x(conf.cam_poi + size*glm::vec3(1.0, 0.0, 0.0));
@@ -102,7 +109,6 @@ BokehCanvas::BokehCanvas(int width, int height, const BokehCanvasConf &conf)
   _dbviz.add_line(nx, ny, r);
   _dbviz.add_line(ny, nz, g);
   _dbviz.add_line(nz, nx, b);
-  */
 
   _bg_color = conf.bg_color;
 
@@ -114,8 +120,6 @@ BokehCanvas::BokehCanvas(int width, int height, const BokehCanvasConf &conf)
     _meshes[i].rotate(2*PI*randf(), randvec());
     _meshes[i].set_scale(glm::vec3(10.0));
   }
-
-  glEnable(GL_CULL_FACE);
 }
 
 void BokehCanvas::update() {

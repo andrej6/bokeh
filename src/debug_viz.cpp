@@ -9,13 +9,18 @@
 #define VERT_SHADER_FILE "shaders/" VERT_SHADER_NAME
 #define FRAG_SHADER_FILE "shaders/" FRAG_SHADER_NAME
 
-DebugViz::DebugViz() : _canvas(0), _dirty(false), _depth_test(true), _line_width(1.0) {
+DebugViz::DebugViz() : _dirty(false), _depth_test(true), _line_width(1.0) {
+  _vbuf = 0;
+  _vao = 0;
   lazy_init_shaders();
 }
 
 DebugViz::~DebugViz() {
-  glDeleteBuffers(1, &_vbuf);
-  handle_gl_error("[~DebugViz] Deleting DebugViz vertex buffer");
+  if (_vao != 0) {
+    glDeleteBuffers(1, &_vbuf);
+    glDeleteBuffers(1, &_vao);
+    handle_gl_error("[~DebugViz] Deleting DebugViz vertex buffer");
+  }
 }
 
 void DebugViz::add_line(const glm::vec3 &start, const glm::vec3 &end,
@@ -49,8 +54,8 @@ void DebugViz::clear() {
 
 void DebugViz::draw() {
   lazy_init_shaders();
+  glBindVertexArray(_vao);
   glUseProgram(_shader.program);
-  glBindBuffer(GL_ARRAY_BUFFER, _vbuf);
   handle_gl_error("[DebugViz::draw] Using DebugViz program");
 
   if (_dirty) {
@@ -60,12 +65,6 @@ void DebugViz::draw() {
   if (_lines.empty()) {
     return;
   }
-
-  glVertexAttribPointer(_shader.vpos_loc, 3, GL_FLOAT, false,
-      sizeof(DebugVizPoint), (void*) offsetof(DebugVizPoint, pos));
-  glVertexAttribPointer(_shader.vcol_loc, 4, GL_FLOAT, false,
-      sizeof(DebugVizPoint), (void*) offsetof(DebugVizPoint, col));
-  handle_gl_error("[DebugViz::draw] After setting attrib ptrs");
 
   if (_depth_test) {
     glEnable(GL_DEPTH_TEST);
@@ -83,8 +82,10 @@ void DebugViz::set_viewmat(const glm::mat4 &view) {
     return;
   }
 
+  glBindVertexArray(_vao);
   glUseProgram(_shader.program);
   glUniformMatrix4fv(_shader.viewmat_loc, 1, false, (float*) &view);
+  handle_gl_error("[DebugViz::set_viewmat] Leaving function");
 }
 
 void DebugViz::set_projmat(const glm::mat4 &proj) {
@@ -93,8 +94,10 @@ void DebugViz::set_projmat(const glm::mat4 &proj) {
     return;
   }
 
+  glBindVertexArray(_vao);
   glUseProgram(_shader.program);
   glUniformMatrix4fv(_shader.projmat_loc, 1, false, (float*) &proj);
+  handle_gl_error("[DebugViz::set_projmat] Leaving function");
 }
 
 void DebugViz::pack_data() {
@@ -103,10 +106,11 @@ void DebugViz::pack_data() {
     return;
   }
 
+  glBindVertexArray(_vao);
   glUseProgram(_shader.program);
   glBindBuffer(GL_ARRAY_BUFFER, _vbuf);
   glBufferData(GL_ARRAY_BUFFER, sizeof(LineSegment) * _lines.size(), _lines.data(), GL_DYNAMIC_DRAW);
-  handle_gl_error("Packing DebugViz lines");
+  handle_gl_error("[DebugViz::pack_data] Packing DebugViz lines");
   _dirty = false;
 }
 
@@ -118,11 +122,11 @@ void DebugViz::add_line_segment(const glm::vec3 &a, const glm::vec3 &b,
 }
 
 void DebugViz::lazy_init_shaders() {
-  if (_canvas > 0) {
+  if (_vao != 0) {
     return;
   }
 
-  if ((_canvas = Canvas::active_id()) == 0) {
+  if (!Canvas::active()) {
     return;
   }
 
@@ -148,6 +152,11 @@ void DebugViz::lazy_init_shaders() {
   _shader.projmat_loc = glGetUniformLocation(_shader.program, "projmat");
 
   handle_gl_error("[DebugViz::lazy_init_shaders] Before using program");
+
+  glGenVertexArrays(1, &_vao);
+  glGenBuffers(1, &_vbuf);
+  glBindVertexArray(_vao);
+
   glUseProgram(_shader.program);
   glEnableVertexAttribArray(_shader.vpos_loc);
   glEnableVertexAttribArray(_shader.vcol_loc);
@@ -158,7 +167,11 @@ void DebugViz::lazy_init_shaders() {
   glUniformMatrix4fv(_shader.projmat_loc, 1, false, (float*) &viewprojmat);
   handle_gl_error("[DebugViz::lazy_init_shaders] After setting matrices");
 
-  glGenBuffers(1, &_vbuf);
   glBindBuffer(GL_ARRAY_BUFFER, _vbuf);
+  glVertexAttribPointer(_shader.vpos_loc, 3, GL_FLOAT, false,
+      sizeof(DebugVizPoint), (void*) offsetof(DebugVizPoint, pos));
+  glVertexAttribPointer(_shader.vcol_loc, 4, GL_FLOAT, false,
+      sizeof(DebugVizPoint), (void*) offsetof(DebugVizPoint, col));
+  handle_gl_error("[DebugViz::draw] After setting attrib ptrs");
   handle_gl_error("[DebugViz::lazy_init_shaders] Initializing DebugViz vertex buffer");
 }

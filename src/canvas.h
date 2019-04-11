@@ -117,7 +117,6 @@ class Canvas {
     bool _continue_updates;
 
     GLFWwindow *_window;
-    GLuint _vao;
 };
 
 #endif /* CANVAS_H_ */

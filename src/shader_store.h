@@ -52,4 +52,7 @@ GLuint shader_loc(const char *shader_name);
 // not exist in the store or has not yet been linked for the current context.
 GLuint program_loc(const char *program_name);
 
+// Delete all data and free all resources held by the shader store.
+void delete_all_shader_data();
+
 #endif /* SHADER_STORE_H_ */

@@ -164,7 +164,7 @@ class Mesh {
     size_t faces_size() const { return _faces.size(); }
 
   private:
-    Mesh() : _inited_buf(false), _vbuf(0) {}
+    Mesh() : _inited_buf(false), _vbuf(0), _vao(0) {}
 
     Edge *add_edge(Vertex *root_vert, Vertex *vert, Face *face);
 
@@ -182,6 +182,7 @@ class Mesh {
     void lazy_init_buffers();
 
     GLuint _vbuf;
+    GLuint _vao;
     unsigned _n_verts;
 
     friend class MeshInstance;

@@ -270,9 +270,11 @@ Mesh::Mesh(Mesh &&other) {
   _edge_map = std::move(other._edge_map);
   _inited_buf = other._inited_buf;
   _vbuf = other._vbuf;
+  _vao = other._vao;
 
   other._inited_buf = false;
   other._vbuf = 0;
+  other._vao = 0;
 }
 
 Mesh::~Mesh() {
@@ -294,10 +296,14 @@ Mesh::~Mesh() {
   _edge_map.clear();
 
   if (_inited_buf) {
+    glDeleteVertexArrays(1, &_vao);
     glDeleteBuffers(1, &_vbuf);
+
+    glBindVertexArray(0);
 
     _inited_buf = false;
     _vbuf = 0;
+    _vao = 0;
   }
 }
 
@@ -423,14 +429,6 @@ void Mesh::lazy_init_shaders() {
   _shader.lightpower_loc = glGetUniformLocation(_shader.program, "lightpower");
 
   handle_gl_error("[Mesh::lazy_init_shaders] Before enabling attribs");
-  glUseProgram(_shader.program);
-  glEnableVertexAttribArray(_shader.vpos_loc);
-  glEnableVertexAttribArray(_shader.vnorm_loc);
-  glEnableVertexAttribArray(_shader.vdiffuse_loc);
-  glEnableVertexAttribArray(_shader.vspecular_loc);
-  glEnableVertexAttribArray(_shader.vambient_loc);
-  glEnableVertexAttribArray(_shader.vshiny_loc);
-  handle_gl_error("[Mesh::lazy_init_shaders] Leaving function");
 }
 
 void Mesh::lazy_init_buffers() {
@@ -445,10 +443,13 @@ void Mesh::lazy_init_buffers() {
   handle_gl_error("[Mesh::lazy_init_buffers] Entering function");
   glUseProgram(_shader.program);
 
+  glGenVertexArrays(1, &_vao);
   glGenBuffers(1, &_vbuf);
   handle_gl_error("[Mesh::lazy_init_buffers] After gen buffer");
 
+  glBindVertexArray(_vao);
   glBindBuffer(GL_ARRAY_BUFFER, _vbuf);
+  glEnable(GL_CULL_FACE);
 
   std::vector<MeshVertData> vert_data;
 
@@ -501,8 +502,33 @@ void Mesh::lazy_init_buffers() {
     }
   }
 
+  glUseProgram(_shader.program);
+  glEnableVertexAttribArray(_shader.vpos_loc);
+  glEnableVertexAttribArray(_shader.vnorm_loc);
+  glEnableVertexAttribArray(_shader.vdiffuse_loc);
+  glEnableVertexAttribArray(_shader.vspecular_loc);
+  glEnableVertexAttribArray(_shader.vambient_loc);
+  glEnableVertexAttribArray(_shader.vshiny_loc);
+  handle_gl_error("[Mesh::lazy_init_buffers] After enabling attribs");
+
   glBufferData(GL_ARRAY_BUFFER, sizeof(MeshVertData) * vert_data.size(),
       vert_data.data(), GL_STATIC_DRAW);
+
+  glVertexAttribPointer(_shader.vpos_loc, 3, GL_FLOAT, false,
+      sizeof(MeshVertData), (void*) offsetof(MeshVertData, pos));
+  glVertexAttribPointer(_shader.vnorm_loc, 3, GL_FLOAT, false,
+      sizeof(MeshVertData), (void*) offsetof(MeshVertData, norm));
+  glVertexAttribPointer(_shader.vdiffuse_loc, 4, GL_FLOAT, false,
+      sizeof(MeshVertData), (void*) offsetof(MeshVertData, diffuse));
+  glVertexAttribPointer(_shader.vspecular_loc, 4, GL_FLOAT, false,
+      sizeof(MeshVertData), (void*) offsetof(MeshVertData, specular));
+  glVertexAttribPointer(_shader.vambient_loc, 4, GL_FLOAT, false,
+      sizeof(MeshVertData), (void*) offsetof(MeshVertData, ambient));
+  glVertexAttribPointer(_shader.vshiny_loc, 1, GL_FLOAT, false,
+      sizeof(MeshVertData), (void*) offsetof(MeshVertData, shiny));
+  handle_gl_error("[Mesh::lazy_init_buffers] After setting attrib ptrs");
+
+  glEnable(GL_DEPTH_TEST);
 
   _n_verts = vert_data.size();
 
@@ -551,24 +577,8 @@ void MeshInstance::draw() {
 
   handle_gl_error("[MeshInstance::draw] Entering function");
 
-  glUseProgram(shader->program);
+  glBindVertexArray(m->_vao);
   glEnable(GL_DEPTH_TEST);
-  glBindBuffer(GL_ARRAY_BUFFER, m->_vbuf);
-  handle_gl_error("[MeshInstance::draw] Used program, bound buffer");
-
-  glVertexAttribPointer(shader->vpos_loc, 3, GL_FLOAT, false,
-      sizeof(MeshVertData), (void*) offsetof(MeshVertData, pos));
-  glVertexAttribPointer(shader->vnorm_loc, 3, GL_FLOAT, false,
-      sizeof(MeshVertData), (void*) offsetof(MeshVertData, norm));
-  glVertexAttribPointer(shader->vdiffuse_loc, 4, GL_FLOAT, false,
-      sizeof(MeshVertData), (void*) offsetof(MeshVertData, diffuse));
-  glVertexAttribPointer(shader->vspecular_loc, 4, GL_FLOAT, false,
-      sizeof(MeshVertData), (void*) offsetof(MeshVertData, specular));
-  glVertexAttribPointer(shader->vambient_loc, 4, GL_FLOAT, false,
-      sizeof(MeshVertData), (void*) offsetof(MeshVertData, ambient));
-  glVertexAttribPointer(shader->vshiny_loc, 1, GL_FLOAT, false,
-      sizeof(MeshVertData), (void*) offsetof(MeshVertData, shiny));
-  handle_gl_error("[Mesh::lazy_init_buffers] After enabling attribs");
 
   glm::mat4 modelmat(1.0);
   modelmat = glm::scale(modelmat, _scale);
@@ -603,6 +613,7 @@ void MeshInstance::set_viewmat(const glm::mat4 &viewmat) const {
     return;
   }
 
+  glBindVertexArray(m->_vao);
   glUseProgram(Mesh::_shader.program);
   glUniformMatrix4fv(Mesh::_shader.viewmat_loc, 1, false, (float*) &viewmat);
 }
@@ -615,6 +626,7 @@ void MeshInstance::set_projmat(const glm::mat4 &projmat) const {
     return;
   }
 
+  glBindVertexArray(m->_vao);
   glUseProgram(Mesh::_shader.program);
   glUniformMatrix4fv(Mesh::_shader.projmat_loc, 1, false, (float*) &projmat);
 }
