@@ -9,14 +9,7 @@
 
 #include "mesh.h"
 
-#include <Windows.h>
-
 int main(int argc, char **argv) {
-
-  char buf[128];
-  GetCurrentDirectory(128, buf);
-  std::cout << "Working directory: " << buf << std::endl;
-
   BokehCanvasConf conf;
   //conf.cam_pos = glm::vec3(0.5, 1.0, 0.75);
   conf.cam_pos = glm::vec3(1.0, 4.5, 3.0);
