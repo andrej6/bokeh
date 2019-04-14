@@ -107,6 +107,28 @@ uint32_t randi() {
   return rand_engine();
 }
 
+void barycentric_coords(
+    const glm::vec3 &point,
+    const glm::vec3 &va, const glm::vec3 &vb, const glm::vec3 &vc,
+    float &alpha, float &beta, float &gamma)
+{
+  glm::vec3 n = glm::cross(vb - va, vc - va);
+  float A = 0.5f*glm::length(n);
+  n = glm::normalize(n);
+
+  glm::vec3 abr = glm::cross(vb - va, point - va);
+  glm::vec3 bcr = glm::cross(vc - vb, point - vb);
+  glm::vec3 car = glm::cross(va - vc, point - vc);
+
+  float sgn_abr = glm::dot(n, abr) < 0 ? -1.0 : 1.0;
+  float sgn_bcr = glm::dot(n, bcr) < 0 ? -1.0 : 1.0;
+  float sgn_car = glm::dot(n, car) < 0 ? -1.0 : 1.0;
+
+  alpha = sgn_bcr * glm::length(bcr) / A;
+  beta = sgn_car * glm::length(car) / A;
+  gamma = sgn_abr * glm::length(abr) / A;
+}
+
 static inline bool char_in_str(char c, const char *str) {
   const char *cur = str;
   while (*cur != '\0') {

@@ -10,9 +10,11 @@ foreach(basename
     bokeh_canvas.cpp
     camera.cpp
     mesh.cpp
+    raytracing.cpp
     debug_viz.cpp
     shader_store.cpp
     util.cpp
+    cmj_sampler.cpp
     )
   set(SRCS ${SRCS} "${CMAKE_CURRENT_SOURCE_DIR}/src/${basename}")
 endforeach(basename)

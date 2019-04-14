@@ -14,6 +14,8 @@
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
+#include "debug_viz.h"
+
 class Vertex;
 class Edge;
 class Face;
@@ -78,14 +80,17 @@ class Edge {
     Vertex *vert() const { return _vert; }
     Vertex *root_vert() const { return _root_vert; }
     Face *face() const { return _face; }
-    const glm::vec3 &vert_normal() const { return _vert_normal; }
+    const glm::vec3 &vert_norm() const { return _vert_norm; }
+
+    Edge *next_ccw() const;
+    Edge *next_cw() const;
 
     void set_next(Edge *next) { _next = next; }
     void set_opposite(Edge *opposite) { _opposite = opposite; }
     void set_vert(Vertex *vert) { _vert = vert; }
     void set_root_vert(Vertex *root_vert) { _root_vert = root_vert; }
     void set_face(Face *face) { _face = face; }
-    void set_vert_normal(const glm::vec3 &normal) { _vert_normal = normal; }
+    void set_vert_norm(const glm::vec3 &norm) { _vert_norm = norm; }
 
   private:
     Edge() : _next(NULL), _opposite(NULL), _vert(NULL), _root_vert(NULL), _face(NULL) {}
@@ -98,7 +103,7 @@ class Edge {
     Vertex *_root_vert;
     Face *_face;
 
-    glm::vec3 _vert_normal;
+    glm::vec3 _vert_norm;
 
     friend class Mesh;
 };
@@ -109,18 +114,22 @@ class Face {
 
     void set_edge(Edge *edge) { _edge = edge; }
 
-    unsigned num_verts() const { return _num_verts; }
-
-    glm::vec3 normal() const;
+    glm::vec3 norm() const;
     glm::vec3 centroid() const;
     float area() const;
     Vertex *vert(unsigned i) const;
 
+    //void barycentric_coords(const glm::vec3 &point, float &alpha, float &beta, float &gamma) const;
+
+    void transformed_verts(const glm::mat4 &transform, glm::vec3 &va, glm::vec3 &vb, glm::vec3 &vc) const;
+    glm::vec3 transformed_norm(const glm::mat4 &transform) const;
+
+    glm::vec3 interpolate_norm(float alpha, float beta, float gamma) const;
+
   private:
-    Face(unsigned num_verts) : _edge(NULL), _num_verts(num_verts) {}
+    Face() : _edge(NULL) {}
 
     Edge *_edge;
-    unsigned _num_verts;
 
     friend class Mesh;
 };
@@ -146,18 +155,18 @@ class Mesh {
     }
 
     size_t add_tri(size_t v1, size_t v2, size_t v3);
-    size_t add_quad(size_t v1, size_t v2, size_t v3, size_t v4);
+    std::pair<size_t, size_t> add_quad(size_t v1, size_t v2, size_t v3, size_t v4);
     Face *face(size_t i) const {
       assert(i < _faces.size());
       return _faces[i];
     }
 
-    vert_iterator vert_begin() const { return _vertices.begin(); }
-    vert_iterator vert_end() const { return _vertices.end(); }
-    edge_iterator edge_begin() const { return _edges.begin(); }
-    edge_iterator edge_end() const { return _edges.end(); }
-    face_iterator face_begin() const { return _faces.begin(); }
-    face_iterator face_end() const { return _faces.end(); }
+    vert_iterator verts_begin() const { return _vertices.begin(); }
+    vert_iterator verts_end() const { return _vertices.end(); }
+    edge_iterator edges_begin() const { return _edges.begin(); }
+    edge_iterator edges_end() const { return _edges.end(); }
+    face_iterator faces_begin() const { return _faces.begin(); }
+    face_iterator faces_end() const { return _faces.end(); }
 
     size_t verts_size() const { return _vertices.size(); }
     size_t edges_size() const { return _edges.size(); }
@@ -167,6 +176,7 @@ class Mesh {
     Mesh() : _inited_buf(false), _vbuf(0), _vao(0) {}
 
     Edge *add_edge(Vertex *root_vert, Vertex *vert, Face *face);
+    void compute_vert_norms();
 
     std::vector<Vertex*> _vertices;
     std::vector<Edge*> _edges;
@@ -184,6 +194,8 @@ class Mesh {
     GLuint _vbuf;
     GLuint _vao;
     unsigned _n_verts;
+
+    DebugViz _dbviz;
 
     friend class MeshInstance;
 };
@@ -229,14 +241,21 @@ class MeshInstance {
       _rotate_mat = glm::mat4(1.0);
     }
 
-    void set_viewmat(const glm::mat4 &viewmat) const;
-    void set_projmat(const glm::mat4 &projmat) const;
+    void set_viewmat(const glm::mat4 &viewmat);
+    void set_projmat(const glm::mat4 &projmat);
+
+    glm::mat4 modelmat() const;
+
+    Mesh *mesh() const;
 
   private:
     Mesh::mesh_id _id;
     glm::vec3 _translate;
     glm::vec3 _scale;
     glm::mat4 _rotate_mat;
+
+    glm::mat4 _viewmat;
+    glm::mat4 _projmat;
 };
 
 #endif /* MESH_H_ */

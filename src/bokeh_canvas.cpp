@@ -75,6 +75,15 @@ void bokeh_keyboardcb(GLFWwindow *window, int key, int scancode, int action, int
       case GLFW_KEY_D:
         canvas->_dbviz.toggle_depth_test();
         break;
+
+      case GLFW_KEY_Q:
+      case GLFW_KEY_ESCAPE:
+        glfwSetWindowShouldClose(canvas->window(), GLFW_TRUE);
+        break;
+
+      case GLFW_KEY_T:
+        canvas->trace_ray(canvas->_mouse.x, canvas->_mouse.y);
+        break;
     }
   }
 }
@@ -147,6 +156,10 @@ void BokehCanvas::update() {
   _dbviz.set_projmat(proj);
   _dbviz.draw();
 
+  _raytree.set_viewmat(view);
+  _raytree.set_projmat(proj);
+  _raytree.draw();
+
   glfwSwapBuffers(this->window());
 }
 
@@ -155,4 +168,17 @@ void BokehCanvas::randomize_buns() {
     _meshes[i].set_translate(0.75f*randvec());
     _meshes[i].set_rotate(2*PI*randf(), randvec());
   }
+}
+
+void BokehCanvas::trace_ray(double x, double y) {
+  double norm_x = x / Canvas::width();
+  double norm_y = 1.0 - (y / Canvas::height());
+  RayHit rayhit(_camera.cast_ray(norm_x, norm_y));
+
+  for (unsigned i = 0; i < _meshes.size(); ++i) {
+    rayhit.intersect_mesh(_meshes[i]);
+  }
+
+  _raytree.clear();
+  _raytree.root().add_child(rayhit, glm::vec3(0.0, 0.0, 1.0));
 }

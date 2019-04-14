@@ -85,6 +85,18 @@ void OrthographicCamera::get_view_projection(glm::mat4 &view, glm::mat4 &project
   view = glm::lookAt(position(), point_of_interest(), screen_up());
 }
 
+Ray OrthographicCamera::cast_ray(double x, double y) const {
+  double width = Canvas::width() >= Canvas::height() ? _size : _size * Canvas::aspect();
+  double height = width / Canvas::aspect();
+
+  glm::vec3 screen_center = position();
+  glm::vec3 x_axis = horizontal() * float(width);
+  glm::vec3 y_axis = screen_up() * float(height);
+  glm::vec3 bottom_left = screen_center - 0.5f*x_axis - 0.5f*y_axis;
+  glm::vec3 point = bottom_left + float(x)*x_axis + float(y)*y_axis;
+  return Ray(point, direction());
+}
+
 PerspectiveCamera::PerspectiveCamera(
     const glm::vec3 &pos,
     const glm::vec3 &poi,
@@ -110,4 +122,17 @@ void PerspectiveCamera::get_view_projection(glm::mat4 &view, glm::mat4 &projecti
 
   projection = glm::perspective<float>(deg_to_rad(_angle), aspect, 0.1f, 1000.0f);
   view = glm::lookAt(position(), point_of_interest(), screen_up());
+}
+
+Ray PerspectiveCamera::cast_ray(double x, double y) const {
+  float screen_h = 2 * tan(deg_to_rad(_angle) * 0.5);
+  float screen_w = screen_h * Canvas::aspect();
+
+  glm::vec3 screen_center = position() + direction();
+  glm::vec3 x_axis = horizontal() * screen_w;
+  glm::vec3 y_axis = screen_up() * screen_h;
+  glm::vec3 bottom_left = screen_center - 0.5f*x_axis - 0.5f*y_axis;
+  glm::vec3 point = bottom_left + float(x)*x_axis + float(y)*y_axis;
+  glm::vec3 dir = point - position();
+  return Ray(point, dir);
 }

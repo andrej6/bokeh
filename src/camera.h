@@ -9,6 +9,7 @@
 #include <glm/glm.hpp>
 
 #include "canvas.h"
+#include "raytracing.h"
 #include "util.h"
 
 // A top-level, pure virtual class representing a camera (viewpoint) in a 3D
@@ -71,6 +72,13 @@ class Camera {
     // Places the results in the corresponding arguments.
     virtual void get_view_projection(glm::mat4 &view, glm::mat4 &projection) const = 0;
 
+    // Generate a ray through the given coordinates, according to the active Canvas's
+    // aspect ratio.
+    //
+    // The given coordinates should both be normalized to the [0, 1] range, with 0
+    // being the left screen edge for x and the bottom screen edge for y.
+    virtual Ray cast_ray(double x, double y) const = 0;
+
   private:
     Camera() = delete;
 
@@ -95,6 +103,7 @@ class OrthographicCamera : public Camera {
 
     void zoom(float factor);
     void get_view_projection(glm::mat4 &view, glm::mat4 &projection) const;
+    Ray cast_ray(double x, double y) const;
 
   private:
     float _size;
@@ -110,6 +119,7 @@ class PerspectiveCamera : public Camera {
 
     void zoom(float dist);
     void get_view_projection(glm::mat4 &view, glm::mat4 &projection) const;
+    Ray cast_ray(double x, double y) const;
 
   private:
     float _angle;

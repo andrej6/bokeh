@@ -61,6 +61,10 @@ static inline double rad_to_deg(double r) {
   return r * 180.0 / PI;
 }
 
+void barycentric_coords(const glm::vec3 &point,
+    const glm::vec3 &va, const glm::vec3 &vb, const glm::vec3 &vc,
+    float &alpha, float &beta, float &gamma);
+
 // Split a string into substrings delimited by the characters in `delims`. If `multi` is
 // true, split() will treat any sequence of consecutive characters in `delims` as a single
 // delimiter, and not produce an empty string for each consecutive pair.

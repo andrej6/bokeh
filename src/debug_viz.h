@@ -27,6 +27,7 @@ struct DebugVizShaderData {
 
   GLuint vpos_loc;
   GLuint vcol_loc;
+  GLuint modelmat_loc;
   GLuint viewmat_loc;
   GLuint projmat_loc;
 };
@@ -65,9 +66,10 @@ class DebugViz {
     float line_width() const { return _line_width; }
 
     // Toggle and query the state of depth occlusion on this DebugViz.
-    void toggle_depth_test() { _depth_test = !_depth_test; }
+    static void toggle_depth_test() { _depth_test = !_depth_test; }
     bool depth_test() const { return _depth_test; }
 
+    void set_modelmat(const glm::mat4 &model);
     void set_viewmat(const glm::mat4 &view);
     void set_projmat(const glm::mat4 &proj);
 
@@ -82,7 +84,11 @@ class DebugViz {
     GLuint _vao;
     GLuint _vbuf;
 
-    bool _depth_test;
+    glm::mat4 _modelmat;
+    glm::mat4 _viewmat;
+    glm::mat4 _projmat;
+
+    static bool _depth_test;
     float _line_width;
 
     std::vector<LineSegment> _lines;

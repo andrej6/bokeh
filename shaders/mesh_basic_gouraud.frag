@@ -23,7 +23,7 @@ void main() {
   vec4 homog = MV * vec4(fpos, 1.0);
   vec3 fpos_cam = homog.xyz / homog.w;
 
-  homog = MV * vec4(lightpos, 1.0);
+  homog = viewmat * vec4(lightpos, 1.0);
   vec3 lightpos_cam = homog.xyz / homog.w;
 
   vec3 fnorm_cam = normalize((MV * vec4(fnorm, 0.0)).xyz);
