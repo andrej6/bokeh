@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
   conf.cam_pos = glm::vec3(1.0, 4.5, 3.0);
   conf.cam_poi = glm::vec3(0.0);
   conf.bg_color = glm::vec3(1.0, 0.95, 0.95);
-  conf.objfile = argv[1];
+  conf.scnfile = argv[1];
   BokehCanvas canvas(800, 800, conf);
   canvas.make_active();
 

@@ -73,7 +73,17 @@ std::vector<std::string> split(
     const char *delims = " \t\n",
     bool multi=true);
 
-// Strip a string of leading and trailing whitespace.
-std::string strip(const std::string &str);
+// Strip a string of leading and trailing characters, by default whitespace.
+std::string strip(const std::string &str, const char *trailing = " \t\n");
+
+// Return the leading directory part of the given path. If there is no leading
+// directory, outputs ".".
+std::string dirname(const std::string &path);
+
+glm::vec3 parse_vec3(const std::vector<std::string> &tokens, unsigned start_idx);
+
+float parse_float(const std::vector<std::string> &tokens, unsigned idx);
+
+int parse_int(const std::vector<std::string> &tokens, unsigned idx);
 
 #endif /* UTIL_H_ */

@@ -9,6 +9,7 @@
 
 #include "debug_viz.h"
 #include "mesh.h"
+#include "image.h"
 
 class Face;
 
@@ -19,6 +20,8 @@ class Ray {
 
     Ray(const Ray&) = default;
     Ray(Ray&&) = default;
+    Ray &operator=(const Ray&) = default;
+    Ray &operator=(Ray&&) = default;
 
     const glm::vec3 &origin() const { return _origin; }
     const glm::vec3 &direction() const { return _direction; }
@@ -40,6 +43,8 @@ class RayHit {
 
     RayHit(const RayHit&) = default;
     RayHit(RayHit&&) = default;
+    RayHit &operator=(const RayHit&) = default;
+    RayHit &operator=(RayHit&&) = default;
 
     bool intersect_face(const Face &face, const glm::mat4 &modelmat = glm::mat4(1.0));
     bool intersect_mesh(const MeshInstance &mesh);
@@ -66,6 +71,11 @@ class RayTree;
 class RayTreeNode {
   private:
     RayTreeNode() : _ray(glm::vec3(0.0), glm::vec3(0.0)), _color(0.0) {}
+    RayTreeNode(const RayTreeNode&) = default;
+    RayTreeNode(RayTreeNode&&) = default;
+    RayTreeNode &operator=(const RayTreeNode&) = default;
+    RayTreeNode &operator=(RayTreeNode&&) = default;
+
     ~RayTreeNode();
 
     RayTreeNode(const RayHit &ray, const glm::vec3 color) : _ray(ray), _color(color) {}
@@ -86,7 +96,7 @@ class RayTreePtr {
 
     size_t children_size() const { return _node->_children.size(); }
 
-    void add_child(const RayHit &ray, const glm::vec3 &color);
+    void add_child(const RayHit &ray, const glm::vec3 &color) const;
 
   private:
     RayTreePtr(RayTree *tree, RayTreeNode *node) :
@@ -101,10 +111,10 @@ class RayTreePtr {
 class RayTree {
   public:
     RayTree() = default;
-    RayTree(const RayTree&) = default;
+    RayTree(const RayTree&) = delete;
     RayTree(RayTree&&) = default;
 
-    RayTree &operator=(const RayTree&) = default;
+    RayTree &operator=(const RayTree&) = delete;
     RayTree &operator=(RayTree&&) = default;
 
     RayTreePtr root() const { return RayTreePtr((RayTree*) this, (RayTreeNode*) &_root); }

@@ -177,23 +177,108 @@ std::vector<std::string> split(const std::string &str, const char *delims, bool 
   return vec;
 }
 
-std::string strip(const std::string &str) {
+std::string strip(const std::string &str, const char *trailing) {
   unsigned i, j;
 
   for (i = 0; i < str.size(); ++i) {
     char c = str[i];
-    if (!char_in_str(c, " \t\n")) {
+    if (!char_in_str(c, trailing)) {
       break;
     }
   }
 
   for (j = str.size() - 1; j < str.size(); --j) {
     char c = str[j];
-    if (!char_in_str(c, " \t\n")) {
+    if (!char_in_str(c, trailing)) {
       break;
     }
   }
 
   ++j;
   return str.substr(i, j-i);
+}
+
+std::string dirname(const std::string &path) {
+  if (path.empty()) {
+    return std::string();
+  }
+
+  unsigned end;
+  for (end = path.size(); end >= 0; --end) {
+    if (path[end-1] == '/' || path[end-1] == '\\') {
+      break;
+    }
+  }
+
+  if (end == 0) {
+    if (path[0] == '/') {
+      return std::string();
+    } else {
+      return std::string(".");
+    }
+  }
+
+  return path.substr(0, end);
+}
+
+glm::vec3 parse_vec3(const std::vector<std::string> &tokens, unsigned start_idx) {
+  if (tokens.size() - start_idx < 3) {
+    glerr() << "ERROR: insufficient components for 3-vector" << std::endl;
+    exit(-1);
+  }
+
+  glm::vec3 vec;
+  for (unsigned i = 0; i < 3; ++i) {
+    float f;
+    if (sscanf(tokens[start_idx + i].c_str(), "%f", &f) != 1) {
+      glerr() << "ERROR: invalid vector component" << std::endl;
+      exit(-1);
+    }
+    vec[i] = f;
+  }
+
+  return vec;
+}
+
+glm::vec3 parse_color(const std::vector<std::string> &tokens, unsigned start_idx) {
+  glm::vec3 c = parse_vec3(tokens, start_idx);
+  if (c.r < 0.0 || c.r > 1.0
+   || c.g < 0.0 || c.g > 1.0
+   || c.b < 0.0 || c.b > 1.0)
+  {
+    glerr() << "ERROR: invalid color component" << std::endl;
+    exit(-1);
+  }
+
+  return c;
+}
+
+float parse_float(const std::vector<std::string> &tokens, unsigned idx) {
+  if (tokens.size() - idx < 1) {
+    glerr() << "ERROR: no float found" << std::endl;
+    exit(-1);
+  }
+
+  float f;
+  if (sscanf(tokens[idx].c_str(), "%f", &f) != 1) {
+    glerr() << "ERROR: invalid floating-point parameter" << std::endl;
+    exit(-1);
+  }
+
+  return f;
+}
+
+int parse_int(const std::vector<std::string> &tokens, unsigned idx) {
+  if (tokens.size() - idx < 1) {
+    glerr() << "ERROR: no int found" << std::endl;
+    exit(-1);
+  }
+
+  int d;
+  if (sscanf(tokens[idx].c_str(), "%d", &d) != 1) {
+    glerr() << "ERROR: invalid integer parameter" << std::endl;
+    exit(-1);
+  }
+
+  return d;
 }

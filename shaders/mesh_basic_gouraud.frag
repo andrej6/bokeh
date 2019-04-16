@@ -3,10 +3,10 @@
 in vec3 fpos;
 in vec3 fnorm;
 
-in vec4 fdiffuse;
-in vec4 fspecular;
-in vec4 fambient;
-in float fshiny;
+uniform vec4 diffuse;
+uniform vec4 specular;
+uniform vec4 ambient;
+uniform float shiny;
 
 uniform mat4 modelmat;
 uniform mat4 viewmat;
@@ -35,13 +35,13 @@ void main() {
   vec3 light_dir = normalize(lightpos_cam - fpos_cam);
   vec3 reflect_dir = normalize(2*dot(light_dir, fnorm_cam) * fnorm_cam - light_dir);
 
-  vec4 ambient = vec4(lightambient, 1.0) * fambient;
+  vec4 fambient = vec4(lightambient, 1.0) * ambient;
 
   float dp = max(dot(light_dir, fnorm_cam), 0.0);
-  vec4 diffuse = fdiffuse * dp * vec4(lightdiffuse, 1.0) * dist_div;
+  vec4 fdiffuse = diffuse * dp * vec4(lightdiffuse, 1.0) * dist_div;
 
   dp = max(dot(reflect_dir, eye_dir), 0.0);
-  vec4 specular = fspecular * pow(dp, fshiny) * vec4(lightspecular, 1.0) * dist_div;
+  vec4 fspecular = specular * pow(dp, shiny) * vec4(lightspecular, 1.0) * dist_div;
 
-  gl_FragColor = ambient + lightpower*(diffuse + specular);
+  gl_FragColor = fambient + lightpower*(fdiffuse + fspecular);
 }

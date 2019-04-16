@@ -10,7 +10,9 @@ foreach(basename
     bokeh_canvas.cpp
     camera.cpp
     mesh.cpp
+    material.cpp
     raytracing.cpp
+    scene.cpp
     debug_viz.cpp
     shader_store.cpp
     util.cpp

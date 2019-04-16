@@ -1,0 +1,67 @@
+# SCN scene format, an invention for this project.
+# This scene mimics Barb's reflective_spheres.obj from homework 3, but with
+# bunnies instead of spheres.
+
+# All file names are given relative to the directory containing the SCN file.
+
+# mesh <name> <file> -- load a mesh and give it a name
+mesh bunny bunny_1k.obj
+mesh square square.obj
+
+# materials <MTL file> -- load materials from an MTL file. There can
+# be multiple of these; the names of materials must be unique across all
+# loaded MTL's.
+materials materials.mtl
+
+# Background color. Repeats override previous definitions.
+bgc 0.2 0.1 0.6
+
+# possible camera specifications:
+#   camera perspective <field of view>
+#   camera orthographic <size>
+# Only one camera specification can exist per scene. The camera properties
+# (position, point of interest, up vector) can be given at any time after
+# the camera specification, and repeated camera properties will override
+# previous definitions.
+camera perspective 30.0
+cam_position -5.5406 -5.42681 2.02057
+cam_poi -1.5208 -0.455876 0.388196
+#cam_position 5.0 0.0 0.0
+#cam_poi 0.0 0.0 0.0
+cam_up 0.0 0.0 1.0
+
+# mesh_instance <name>
+# Define an instance of a previously loaded mesh.
+# Properties:
+#   mtl <name> -- material. Must have been defined in an already-loaded MTL file.
+#   scale <vec3> -- per-axis scale. This is applied before rotating and translating.
+#   rotate <vec3> <degrees> -- rotation. The vector gives an axis, the degrees an amount.
+#   translate <vec3> -- translation. This is applied after scaling and rotating.
+# A trailing '+' on scale, rotate, or translate makes that transformation apply on top of
+# previous transformations. So:
+#   rotate 1 0 0  90
+#   rotate+ 0 0 1 45
+# will rotate the mesh instance 90 degrees around the x axis, and then 45 degrees around
+# the y axis.
+mesh_instance square
+mtl GreyDiffuse
+scale 5.0 5.0 5.0
+
+mesh_instance square
+mtl WhiteLight
+scale 2.0 2.0 2.0
+translate -5.0 5.0 10.0
+rotate 1.0 0.0 0.0    180.0
+
+mesh_instance bunny
+mtl GreyMirror
+scale 5.0 5.0 5.0
+translate -0.8 -0.5 -0.35
+rotate 1.0 0.0 0.0    90.0
+
+mesh_instance bunny
+mtl RedMirror
+scale 2.0 2.0 2.0
+translate -2.2 0.0 -0.125
+rotate 1.0 0.0 0.0    90.0
+rotate+ 0.0 0.0 1.0   90.0

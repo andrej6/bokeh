@@ -1,0 +1,48 @@
+# The MTL file format is a companion to the OBJ format, both defined/standardized
+# by Wavefront.
+
+# Create a new material with the given name.
+newmtl WhiteLight
+# Material properties:
+#   Kd -- diffuse color
+#   Ks -- specular color, co-opted here to also represent reflectance color for
+#         reflective materials
+#   Ns -- shininess exponent
+#   Ke -- emitted color; not part of the standard MTL format, added to this
+#         implementation for convenience
+#   Ne -- power of emitted light; again, not standard MTL
+#   illum -- illumination modes. There are 11 in the standard format; we only
+#         support (and slightly modify the definition of):
+#           0: no ambient, no reflection, no refraction
+#           1: ambient, no reflection, no refraction
+#           3: ambient, reflection, no refraction
+#           6: ambient, no reflection, refraction
+# Other material properties from the standard MTL format are not supported.
+Kd 0.0 0.0 0.0
+Ks 0.0 0.0 0.0
+Ke 1.0 1.0 1.0
+Ne 70.0
+
+newmtl GreyDiffuse
+Kd 0.7 0.7 0.7
+Ka 0.7 0.7 0.7
+Ks 0.8 0.8 0.8
+Ns 2.0
+Ke 0.0 0.0 0.0
+illum 1
+
+newmtl GreyMirror
+Kd 0.1 0.1 0.1
+Ka 0.1 0.1 0.1
+Ks 0.8 0.8 0.8
+Ns 2.0
+Ke 0.0 0.0 0.0
+illum 3
+
+newmtl RedMirror
+Kd 0.1 0.1 0.1
+Ka 0.1 0.1 0.1
+Ks 0.8 0.0 0.0
+Ns 2.0
+Ke 0.0 0.0 0.0
+illum 3

@@ -23,10 +23,6 @@ MeshShaderInfo Mesh::_shader;
 struct MeshVertData {
   glm::vec3 pos;
   glm::vec3 norm;
-  glm::vec4 diffuse;
-  glm::vec4 specular;
-  glm::vec4 ambient;
-  float shiny;
 };
 
 size_t HashVPair::operator()(const VPair &pair) const {
@@ -466,11 +462,11 @@ void Mesh::lazy_init_shaders() {
   handle_gl_error("[Mesh::lazy_init_shaders] Before getting input locations");
   _shader.vpos_loc = glGetAttribLocation(_shader.program, "vpos");
   _shader.vnorm_loc = glGetAttribLocation(_shader.program, "vnorm");
-  _shader.vdiffuse_loc = glGetAttribLocation(_shader.program, "vdiffuse");
-  _shader.vspecular_loc = glGetAttribLocation(_shader.program, "vspecular");
-  _shader.vambient_loc = glGetAttribLocation(_shader.program, "vambient");
-  _shader.vshiny_loc = glGetAttribLocation(_shader.program, "vshiny");
 
+  _shader.diffuse_loc = glGetUniformLocation(_shader.program, "diffuse");
+  _shader.specular_loc = glGetUniformLocation(_shader.program, "specular");
+  _shader.ambient_loc = glGetUniformLocation(_shader.program, "ambient");
+  _shader.shiny_loc = glGetUniformLocation(_shader.program, "shiny");
   _shader.modelmat_loc = glGetUniformLocation(_shader.program, "modelmat");
   _shader.viewmat_loc = glGetUniformLocation(_shader.program, "viewmat");
   _shader.projmat_loc = glGetUniformLocation(_shader.program, "projmat");
@@ -480,7 +476,7 @@ void Mesh::lazy_init_shaders() {
   _shader.lightambient_loc = glGetUniformLocation(_shader.program, "lightambient");
   _shader.lightpower_loc = glGetUniformLocation(_shader.program, "lightpower");
 
-  handle_gl_error("[Mesh::lazy_init_shaders] Before enabling attribs");
+  handle_gl_error("[Mesh::lazy_init_shaders] Leaving function");
 }
 
 void Mesh::lazy_init_buffers() {
@@ -526,10 +522,12 @@ void Mesh::lazy_init_buffers() {
       MeshVertData vd;
       vd.pos = e->vert()->position();
 
+      /*
       vd.diffuse = glm::vec4(0.7, 0.7, 0.7, 1.0);
       vd.specular = glm::vec4(0.9, 0.9, 0.9, 1.0);
       vd.ambient = glm::vec4(0.3, 0.3, 0.3, 1.0);
       vd.shiny = 50.0;
+      */
 
       if (glm::length(e->vert_norm()) < EPSILON) {
         vd.norm = face_norm;
@@ -544,10 +542,6 @@ void Mesh::lazy_init_buffers() {
   glUseProgram(_shader.program);
   glEnableVertexAttribArray(_shader.vpos_loc);
   glEnableVertexAttribArray(_shader.vnorm_loc);
-  glEnableVertexAttribArray(_shader.vdiffuse_loc);
-  glEnableVertexAttribArray(_shader.vspecular_loc);
-  glEnableVertexAttribArray(_shader.vambient_loc);
-  glEnableVertexAttribArray(_shader.vshiny_loc);
   handle_gl_error("[Mesh::lazy_init_buffers] After enabling attribs");
 
   glBufferData(GL_ARRAY_BUFFER, sizeof(MeshVertData) * vert_data.size(),
@@ -557,14 +551,6 @@ void Mesh::lazy_init_buffers() {
       sizeof(MeshVertData), (void*) offsetof(MeshVertData, pos));
   glVertexAttribPointer(_shader.vnorm_loc, 3, GL_FLOAT, false,
       sizeof(MeshVertData), (void*) offsetof(MeshVertData, norm));
-  glVertexAttribPointer(_shader.vdiffuse_loc, 4, GL_FLOAT, false,
-      sizeof(MeshVertData), (void*) offsetof(MeshVertData, diffuse));
-  glVertexAttribPointer(_shader.vspecular_loc, 4, GL_FLOAT, false,
-      sizeof(MeshVertData), (void*) offsetof(MeshVertData, specular));
-  glVertexAttribPointer(_shader.vambient_loc, 4, GL_FLOAT, false,
-      sizeof(MeshVertData), (void*) offsetof(MeshVertData, ambient));
-  glVertexAttribPointer(_shader.vshiny_loc, 1, GL_FLOAT, false,
-      sizeof(MeshVertData), (void*) offsetof(MeshVertData, shiny));
   handle_gl_error("[Mesh::lazy_init_buffers] After setting attrib ptrs");
 
   glEnable(GL_DEPTH_TEST);
@@ -590,7 +576,7 @@ static struct MeshManager {
 
   mesh_name_map_t mesh_names;
   mesh_map_t meshes;
-} meshes;
+} mesh_manager;
 
 Mesh::mesh_id add_mesh_from_obj(const char *name, const char *obj_filename) {
   Mesh::mesh_id id = next_mesh_id;
@@ -600,15 +586,15 @@ Mesh::mesh_id add_mesh_from_obj(const char *name, const char *obj_filename) {
   assert(objfile.good());
 
   Mesh *m = new Mesh(Mesh::from_obj(objfile));
-  meshes.meshes.insert(std::make_pair(id, m));
-  meshes.mesh_names.insert(std::make_pair(name, id));
+  mesh_manager.meshes.insert(std::make_pair(id, m));
+  mesh_manager.mesh_names.insert(std::make_pair(name, id));
 
   return id;
 }
 
 Mesh::mesh_id get_mesh_id(const char *name) {
-  mesh_name_map_t::iterator itr = meshes.mesh_names.find(name);
-  if (itr == meshes.mesh_names.end()) {
+  mesh_name_map_t::iterator itr = mesh_manager.mesh_names.find(name);
+  if (itr == mesh_manager.mesh_names.end()) {
     return Mesh::NONE;
   } else {
     return itr->second;
@@ -638,11 +624,23 @@ void MeshInstance::draw() {
   glUniformMatrix4fv(shader->projmat_loc, 1, false, (float*) &_projmat);
   handle_gl_error("[MeshInstance::draw] Set modelmat");
 
+  const Material *mtl = get_mtl(_mtl_id);
+
+  glm::vec3 diffuse = mtl->diffuse();
+  glm::vec3 specular = mtl->specular();
+  glm::vec3 ambient = mtl->ambient_on() ? mtl->ambient() : glm::vec3(0, 0, 0);
+  float shiny = mtl->shiny();
+
   glm::vec3 lightpos(10, 10, 10);
   glm::vec3 lightdiffuse(1.0, 1.0, 1.0);
   glm::vec3 lightspecular(1.0, 1.0, 1.0);
   glm::vec3 lightambient(0.4, 0.3, 0.5);
   float lightpower = 200.0;
+
+  glUniform4f(shader->diffuse_loc, diffuse.r, diffuse.g, diffuse.b, 1.0);
+  glUniform4f(shader->specular_loc, specular.r, specular.g, specular.b, 1.0);
+  glUniform4f(shader->ambient_loc, ambient.r, ambient.g, ambient.b, 1.0);
+  glUniform1f(shader->shiny_loc, shiny);
 
   glUniform3fv(shader->lightpos_loc, 1, (float*) &lightpos);
   glUniform3fv(shader->lightdiffuse_loc, 1, (float*) &lightdiffuse);
@@ -671,13 +669,16 @@ void MeshInstance::set_projmat(const glm::mat4 &projmat) {
 }
 
 glm::mat4 MeshInstance::modelmat() const {
-  glm::mat4 model(1.0);
-  model = glm::scale(model, _scale);
-  model = _rotate_mat * model;
-  model = glm::translate(model, _translate);
+  glm::mat4 translate = glm::translate(glm::mat4(1.0), _translate);
+  glm::mat4 scale = glm::scale(glm::mat4(1.0), _scale);
+  glm::mat4 model = translate * _rotate_mat * scale;
   return model;
 }
 
 Mesh *MeshInstance::mesh() const {
-  return meshes.meshes.find(_id)->second;
+  return mesh_manager.meshes.find(_id)->second;
+}
+
+const Material *MeshInstance::material() const {
+  return get_mtl(_mtl_id);
 }

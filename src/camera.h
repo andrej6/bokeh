@@ -19,6 +19,10 @@ class Camera {
     Camera(const glm::vec3 &pos, const glm::vec3 &poi, const glm::vec3 &up);
     virtual ~Camera() {}
 
+    void set_position(const glm::vec3 &pos) { _position = pos; }
+    void set_point_of_interest(const glm::vec3 &poi) { _point_of_interest = poi; }
+    void set_up(const glm::vec3 &up) { _up = up; }
+
     // Move the camera forward (positive values) or backwards (negative
     // values).
     void dolly(float dist);
@@ -101,6 +105,7 @@ class OrthographicCamera : public Camera {
         const glm::vec3 &up = glm::vec3(0,1,0),
         float size=100);
 
+    void set_size(float size) { _size = size; }
     void zoom(float factor);
     void get_view_projection(glm::mat4 &view, glm::mat4 &projection) const;
     Ray cast_ray(double x, double y) const;
@@ -117,6 +122,7 @@ class PerspectiveCamera : public Camera {
         const glm::vec3 &up = glm::vec3(0,1,0),
         float fov = 45);
 
+    void set_angle(float fov) { _angle = fov; }
     void zoom(float dist);
     void get_view_projection(glm::mat4 &view, glm::mat4 &projection) const;
     Ray cast_ray(double x, double y) const;

@@ -52,7 +52,7 @@ RayTreeNode::~RayTreeNode() {
   }
 }
 
-void RayTreePtr::add_child(const RayHit &ray, const glm::vec3 &color) {
+void RayTreePtr::add_child(const RayHit &ray, const glm::vec3 &color) const {
   assert(_node);
 
   RayTreeNode *child = new RayTreeNode(ray, color);

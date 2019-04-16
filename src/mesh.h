@@ -15,6 +15,7 @@
 #include <glm/ext.hpp>
 
 #include "debug_viz.h"
+#include "material.h"
 
 class Vertex;
 class Edge;
@@ -29,11 +30,11 @@ struct MeshShaderInfo {
 
   GLuint vpos_loc;
   GLuint vnorm_loc;
-  GLuint vdiffuse_loc;
-  GLuint vspecular_loc;
-  GLuint vambient_loc;
-  GLuint vshiny_loc;
 
+  GLuint diffuse_loc;
+  GLuint specular_loc;
+  GLuint ambient_loc;
+  GLuint shiny_loc;
   GLuint modelmat_loc;
   GLuint viewmat_loc;
   GLuint projmat_loc;
@@ -206,8 +207,10 @@ Mesh::mesh_id get_mesh_id(const char *name);
 class MeshInstance {
   public:
     MeshInstance(Mesh::mesh_id id) :
-      _id(id), _translate(0.0), _scale(1.0), _rotate_mat(1.0) {}
+      _id(id), _mtl_id(Material::NONE), _translate(0.0), _scale(1.0), _rotate_mat(1.0) {}
     MeshInstance(const MeshInstance&) = default;
+
+    void set_mtl(Material::mtl_id id) { _mtl_id = id; }
 
     void draw();
 
@@ -216,7 +219,8 @@ class MeshInstance {
     }
 
     void rotate(float angle, const glm::vec3 &axis) {
-      _rotate_mat = glm::rotate(_rotate_mat, angle, axis);
+      glm::mat4 rot = glm::rotate(glm::mat4(1.0), angle, axis);
+      _rotate_mat = rot * _rotate_mat;
     }
 
     void scale(const glm::vec3 &factor) {
@@ -247,9 +251,11 @@ class MeshInstance {
     glm::mat4 modelmat() const;
 
     Mesh *mesh() const;
+    const Material *material() const;
 
   private:
     Mesh::mesh_id _id;
+    Material::mtl_id _mtl_id;
     glm::vec3 _translate;
     glm::vec3 _scale;
     glm::mat4 _rotate_mat;
