@@ -1,0 +1,13 @@
+mesh square square.obj
+materials materials.mtl
+
+bgc 0.5 0.3 0.8
+
+camera perspective 45
+cam_position 1 1 1
+cam_up 0 0 1
+cam_poi 0 0 0
+
+mesh_instance square
+mtl GreyDiffuse
+scale 5 5 5

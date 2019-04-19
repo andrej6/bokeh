@@ -1,5 +1,7 @@
 #include "bokeh_canvas.h"
 
+#include <ctime>
+
 #include "mesh.h"
 
 void bokeh_mousebuttoncb(GLFWwindow *window, int button, int action, int mods) {
@@ -47,6 +49,13 @@ void bokeh_cursorposcb(GLFWwindow *window, double x, double y) {
     canvas->_mouse.inited = true;
   }
 
+  canvas->_mouse.x = x;
+  canvas->_mouse.y = y;
+
+  if (canvas->_draw_raytracing) {
+    return;
+  }
+
   uint32_t buttons = canvas->_mouse.buttons;
   Camera *cam = canvas->_scene.camera();
   if (buttons & MOUSE_BUTTON_LEFT) {
@@ -60,9 +69,6 @@ void bokeh_cursorposcb(GLFWwindow *window, double x, double y) {
   if (buttons & MOUSE_BUTTON_RIGHT) {
     cam->dolly(prevy - y);
   }
-
-  canvas->_mouse.x = x;
-  canvas->_mouse.y = y;
 }
 
 void bokeh_keyboardcb(GLFWwindow *window, int key, int scancode, int action, int mods) {
@@ -82,6 +88,18 @@ void bokeh_keyboardcb(GLFWwindow *window, int key, int scancode, int action, int
         glfwSetWindowShouldClose(canvas->window(), GLFW_TRUE);
         break;
 
+      case GLFW_KEY_R:
+        if (canvas->_draw_raytracing) {
+          canvas->_raytracing.reset();
+        }
+
+        canvas->_draw_raytracing = !canvas->_draw_raytracing;
+        break;
+
+      case GLFW_KEY_K:
+        canvas->_scene.toggle_draw_kdtree();
+        break;
+
       case GLFW_KEY_T:
         canvas->_scene.visualize_raytree(canvas->_mouse.x, canvas->_mouse.y);
         break;
@@ -89,10 +107,11 @@ void bokeh_keyboardcb(GLFWwindow *window, int key, int scancode, int action, int
   }
 }
 
-BokehCanvas::BokehCanvas(int width, int height, const BokehCanvasConf &conf)
-  : Canvas(width, height, "Bokeh"),
+BokehCanvas::BokehCanvas(const BokehCanvasConf &conf)
+  : Canvas(conf.width, conf.height, "Bokeh"),
     _scene(Scene::from_scn(conf.scnfile.c_str())),
-    _draw_axes(false)
+    _draw_axes(false), _draw_raytracing(false),
+    _raytracing(&_scene, conf.width, conf.height)
 {
   GLFWwindow *window = this->window();
   glfwSetWindowUserPointer(window, (void*) this);
@@ -111,15 +130,21 @@ void BokehCanvas::update() {
   glClearColor(bg_color.r, bg_color.g, bg_color.b, 1.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  _scene.draw();
+  if (_draw_raytracing) {
+    time_t start = time(NULL);
+    while (time(NULL) - start < 1 && _raytracing.trace_next_pixel()) {}
+    _raytracing.draw();
+  } else {
+    _scene.draw();
 
-  glm::mat4 view, proj;
-  _scene.camera()->get_view_projection(view, proj);
+    glm::mat4 view, proj;
+    _scene.camera()->get_view_projection(view, proj);
 
-  if (_draw_axes) {
-    _dbviz.set_viewmat(view);
-    _dbviz.set_projmat(proj);
-    _dbviz.draw();
+    if (_draw_axes) {
+      _dbviz.set_viewmat(view);
+      _dbviz.set_projmat(proj);
+      _dbviz.draw();
+    }
   }
 
   glfwSwapBuffers(this->window());

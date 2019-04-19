@@ -5,18 +5,19 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "C:\\GraphicsLibraries")
 
 foreach(basename
-    main.cpp
-    canvas.cpp
     bokeh_canvas.cpp
     camera.cpp
+    canvas.cpp
+    cmj_sampler.cpp
+    debug_viz.cpp
+    kd_tree.cpp
+    main.cpp
     mesh.cpp
     material.cpp
     raytracing.cpp
     scene.cpp
-    debug_viz.cpp
     shader_store.cpp
     util.cpp
-    cmj_sampler.cpp
     )
   set(SRCS ${SRCS} "${CMAKE_CURRENT_SOURCE_DIR}/src/${basename}")
 endforeach(basename)

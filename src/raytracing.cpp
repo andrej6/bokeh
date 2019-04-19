@@ -1,13 +1,14 @@
 #include "raytracing.h"
 
+#include "scene.h"
 #include "mesh.h"
 #include "util.h"
 
 bool RayHit::intersect_face(const Face &face, const glm::mat4 &modelmat) {
   glm::vec3 a, b, c, n;
-  face.transformed_verts(modelmat, a, b, c);
+  face.verts_transformed(modelmat, a, b, c);
 
-  n = face.transformed_norm(modelmat);
+  n = face.norm_transformed(modelmat);
   float t = (glm::dot(n, a) - glm::dot(n, _ray.origin())) / glm::dot(n, _ray.direction());
 
   if (std::isnan(t) || std::isinf(t) || t < 0.0) {
@@ -27,8 +28,8 @@ bool RayHit::intersect_face(const Face &face, const glm::mat4 &modelmat) {
   }
 
   _t = t;
-  _face = (Face*) &face;
   _modelmat = modelmat;
+  _norm = face.interpolate_norm_transformed(modelmat, alpha, beta, gamma);
 
   return true;
 }
@@ -43,32 +44,45 @@ bool RayHit::intersect_mesh(const MeshInstance &mesh) {
     intersected |= this->intersect_face(**itr, modelmat);
   }
 
+  if (intersected) {
+    _mesh_instance = &mesh;
+    _mtl_id = mesh.material_id();
+  }
+
   return intersected;
+}
+
+const Material *RayHit::material() const {
+  if (_mtl_id == Material::NONE) {
+    return NULL;
+  }
+
+  return get_mtl(_mtl_id);
+}
+
+void RayTreeNode::add_child(const RayHit &hit, const glm::vec3 &color) {
+  RayTreeNode *child = new RayTreeNode(_tree);
+  _children.push_back(child);
+
+  _color = color;
+  glm::vec4 start_color(color.r, color.g, color.b, 1.0);
+  glm::vec4 end_color(start_color);
+  glm::vec3 end_point;
+
+  if (!hit.intersected()) {
+    end_color.a = 0.0;
+    end_point = hit.ray().point_at(20.0);
+  } else {
+    end_point = hit.intersection_point();
+  }
+
+  _tree->_dbviz.add_line(hit.ray().origin(), end_point, start_color, end_color);
 }
 
 RayTreeNode::~RayTreeNode() {
   for (unsigned i = 0; i < _children.size(); ++i) {
     delete _children[i];
   }
-}
-
-void RayTreePtr::add_child(const RayHit &ray, const glm::vec3 &color) const {
-  assert(_node);
-
-  RayTreeNode *child = new RayTreeNode(ray, color);
-  _node->_children.push_back(child);
-  glm::vec4 start_color(color.r, color.g, color.b, 1.0);
-  glm::vec4 end_color(start_color);
-  glm::vec3 end_point;
-
-  if (!ray.intersected()) {
-    end_color.a = 0.0;
-    end_point = ray.ray().point_at(20.0);
-  } else {
-    end_point = ray.intersection_point();
-  }
-
-  _tree->_dbviz.add_line(ray.ray().origin(), end_point, start_color, end_color);
 }
 
 void RayTree::clear() {
@@ -78,4 +92,86 @@ void RayTree::clear() {
 
   _root._children.clear();
   _dbviz.clear();
+}
+
+void RayTracing::draw() {
+  lazy_init_fbo();
+
+  if (_fbo == 0) {
+    return;
+  }
+
+  if (_dirty) {
+    pack_data();
+  }
+
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, _fbo);
+  handle_gl_error("[RayTracing::draw] Binding framebuffer");
+
+  glBlitFramebuffer(
+      0, 0, Canvas::width(), Canvas::height(),
+      0, 0, _image.width(), _image.height(),
+      GL_COLOR_BUFFER_BIT, GL_NEAREST);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  handle_gl_error("[RayTracing::draw] Leaving function");
+}
+
+bool RayTracing::trace_next_pixel() {
+  if (_trace_y >= _image.height()) {
+    return false;
+  }
+
+  double center_x = double(_trace_x) + 0.5;
+  double center_y = double(_image.height() - _trace_y - 1) + 0.5;
+
+  glm::vec3 color = _scene->trace_ray(center_x, center_y, 3);
+  _image.set_pixel(_trace_x, _trace_y, glm::vec4(color.r, color.g, color.b, 1.0));
+  _dirty = true;
+
+  ++_trace_x;
+  if (_trace_x >= _image.width()) {
+    _trace_x = 0;
+    ++_trace_y;
+  }
+
+  return true;
+}
+
+void RayTracing::lazy_init_fbo() {
+  if (_fbo != 0) {
+    return;
+  }
+
+  if (!Canvas::active()) {
+    return;
+  }
+
+  glGenTextures(1, &_tex);
+  glBindTexture(GL_TEXTURE_RECTANGLE, _tex);
+  handle_gl_error("[RayTracing::lazy_init_fbo] Genning/binding texture");
+
+  pack_data();
+
+  glGenFramebuffers(1, &_fbo);
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, _fbo);
+  handle_gl_error("[RayTracing::lazy_init_fbo] Genning/binding FBO");
+
+  glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+      GL_TEXTURE_RECTANGLE, _tex, 0);
+  handle_gl_error("[RayTracing::lazy_init_fbo] Setting FBO attachment");
+
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+
+  handle_gl_error("[RayTracing::lazy_init_fbo] Leaving function");
+}
+
+void RayTracing::pack_data() {
+  glBindTexture(GL_TEXTURE_RECTANGLE, _tex);
+  handle_gl_error("[RayTracing::pack_data] Binding texture");
+
+  glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA8, _image.width(), _image.height(), 0,
+      GL_RGBA, GL_UNSIGNED_BYTE, (const void*) _image.data());
+  handle_gl_error("[RayTracing::pack_data] Leaving function");
+
+  _dirty = false;
 }

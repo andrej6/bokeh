@@ -125,6 +125,7 @@ void PerspectiveCamera::get_view_projection(glm::mat4 &view, glm::mat4 &projecti
 }
 
 Ray PerspectiveCamera::cast_ray(double x, double y) const {
+  y = 1.0 - y;
   float screen_h = 2 * tan(deg_to_rad(_angle) * 0.5);
   float screen_w = screen_h * Canvas::aspect();
 

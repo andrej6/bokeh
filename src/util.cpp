@@ -45,8 +45,7 @@ void handle_gl_error(const char *msg, bool warn) {
   }
 
   if (!warn && err) {
-    //exit(-1);
-    assert(0);
+    exit(-1);
   }
 }
 

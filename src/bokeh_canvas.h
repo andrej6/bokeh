@@ -28,15 +28,16 @@ struct MouseInfo {
 };
 
 struct BokehCanvasConf {
-  glm::vec3 cam_pos;
-  glm::vec3 cam_poi;
-  glm::vec3 bg_color;
+  unsigned width, height;
+  unsigned shadow_samples;
+  unsigned antialias_samples;
+  unsigned num_bounces;
   std::string scnfile;
 };
 
 class BokehCanvas : public Canvas {
   public:
-    BokehCanvas(int width, int height, const BokehCanvasConf &conf);
+    BokehCanvas(const BokehCanvasConf &conf);
     const MouseInfo &mouse() const { return _mouse; }
 
   protected:
@@ -53,6 +54,9 @@ class BokehCanvas : public Canvas {
     Scene _scene;
     MouseInfo _mouse;
     bool _draw_axes;
+    bool _draw_raytracing;
+
+    RayTracing _raytracing;
 };
 
 #endif /* BOKEH_CANVAS_H_ */

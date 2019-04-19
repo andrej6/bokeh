@@ -9,6 +9,8 @@
 #define ILLUM_REFLECT 0x2
 #define ILLUM_REFRACT 0x4
 
+class RayHit;
+
 class Material {
   public:
     typedef size_t mtl_id;
@@ -76,6 +78,8 @@ class Material {
     }
 
     void set_illum_mode(int mode) { _illum_modes = mode; }
+
+    glm::vec3 shade(const RayHit &incoming, const RayHit &lightray) const;
 
   private:
     glm::vec3 _diffuse;

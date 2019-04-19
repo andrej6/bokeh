@@ -10,8 +10,10 @@
 #include "debug_viz.h"
 #include "mesh.h"
 #include "image.h"
+#include "material.h"
 
 class Face;
+class Scene;
 
 class Ray {
   public:
@@ -37,9 +39,10 @@ class Ray {
 class RayHit {
   public:
     RayHit(const glm::vec3 &origin, const glm::vec3 &direction) :
-      _t(NAN), _ray(origin, direction), _face(NULL) {}
+      _t(NAN), _ray(origin, direction), _mesh_instance(NULL), _mtl_id(Material::NONE) {}
 
-    RayHit(const Ray &ray) : _t(NAN), _ray(ray), _face(NULL) {}
+    RayHit(const Ray &ray) :
+      _t(NAN), _ray(ray), _mesh_instance(NULL), _mtl_id(Material::NONE) {}
 
     RayHit(const RayHit&) = default;
     RayHit(RayHit&&) = default;
@@ -49,28 +52,43 @@ class RayHit {
     bool intersect_face(const Face &face, const glm::mat4 &modelmat = glm::mat4(1.0));
     bool intersect_mesh(const MeshInstance &mesh);
 
-    bool intersected() const { return !std::isnan(_t); }
+    bool intersected() const { return _mesh_instance != NULL; }
     glm::vec3 intersection_point() const { return _ray.point_at(_t); }
 
-    float t() const { return _t; }
     const Ray &ray() const { return _ray; }
-    Face *face() const { return _face; }
+    float t() const { return _t; }
+    const glm::vec3 &norm() const { return _norm; }
+    Material::mtl_id material_id() const { return _mtl_id; }
+    const Material *material() const;
+    const MeshInstance *mesh_instance() const { return _mesh_instance; }
 
-    void set_t(float t) { _t = t; }
-    void set_face(Face *face) { _face = face; }
+    void set_mesh_instance(const MeshInstance *mi) {
+      _mesh_instance = mi;
+      _mtl_id = mi->material_id();
+    }
 
   private:
     float _t;
     Ray _ray;
-    Face *_face;
+    const MeshInstance *_mesh_instance;
     glm::mat4 _modelmat;
+    glm::vec3 _norm;
+    Material::mtl_id _mtl_id;
 };
 
 class RayTree;
 
 class RayTreeNode {
+  public:
+    typedef std::vector<RayTreeNode*>::iterator iterator;
+
+    void add_child(const RayHit &hit, const glm::vec3 &color);
+
+    iterator begin() { return _children.begin(); }
+    iterator end() { return _children.end(); }
+
   private:
-    RayTreeNode() : _ray(glm::vec3(0.0), glm::vec3(0.0)), _color(0.0) {}
+    RayTreeNode(RayTree *tree) : _ray(glm::vec3(0.0), glm::vec3(0.0)), _color(0.0), _tree(tree) {}
     RayTreeNode(const RayTreeNode&) = default;
     RayTreeNode(RayTreeNode&&) = default;
     RayTreeNode &operator=(const RayTreeNode&) = default;
@@ -83,41 +101,21 @@ class RayTreeNode {
     RayHit _ray;
     glm::vec3 _color;
     std::vector<RayTreeNode*> _children;
-
-    friend class RayTreePtr;
-    friend class RayTree;
-};
-
-class RayTreePtr {
-  public:
-    typedef std::vector<RayTreeNode*>::iterator iterator;
-    iterator children_begin() const { return _node->_children.begin(); }
-    iterator children_end() const { return _node->_children.end(); }
-
-    size_t children_size() const { return _node->_children.size(); }
-
-    void add_child(const RayHit &ray, const glm::vec3 &color) const;
-
-  private:
-    RayTreePtr(RayTree *tree, RayTreeNode *node) :
-      _tree(tree), _node(node) {}
-
     RayTree *_tree;
-    RayTreeNode *_node;
 
     friend class RayTree;
 };
 
 class RayTree {
   public:
-    RayTree() = default;
+    RayTree() : _root(this) {}
     RayTree(const RayTree&) = delete;
     RayTree(RayTree&&) = default;
 
     RayTree &operator=(const RayTree&) = delete;
     RayTree &operator=(RayTree&&) = default;
 
-    RayTreePtr root() const { return RayTreePtr((RayTree*) this, (RayTreeNode*) &_root); }
+    RayTreeNode &root() { return _root; }
 
     void set_viewmat(const glm::mat4 &view) { _dbviz.set_viewmat(view); }
     void set_projmat(const glm::mat4 &proj) { _dbviz.set_projmat(proj); }
@@ -128,7 +126,43 @@ class RayTree {
     RayTreeNode _root;
     DebugViz _dbviz;
 
-    friend class RayTreePtr;
+    friend class RayTreeNode;
+};
+
+class RayTracing {
+  public:
+    RayTracing(const Scene *scene)
+      : _scene(scene), _image(Canvas::width(), Canvas::height()),
+      _dirty(true), _tex(0), _fbo(0),
+      _trace_x(0), _trace_y(0) {}
+
+    RayTracing(const Scene *scene, unsigned width, unsigned height) :
+      _scene(scene), _image(width, height), _dirty(true), _fbo(0),
+      _trace_x(0), _trace_y(0) {}
+
+    void draw();
+    bool trace_next_pixel();
+
+    void reset() {
+      _image.clear_to_color(pixel_color(0,0,0,1));
+      _trace_x = _trace_y = 0;
+    }
+
+    Image &image() { return _image; }
+
+  private:
+    void lazy_init_fbo();
+    void pack_data();
+
+    const Scene *_scene;
+    Image _image;
+
+    bool _dirty;
+
+    GLuint _tex;
+    GLuint _fbo;
+
+    unsigned _trace_x, _trace_y;
 };
 
 #endif /* RAYTRACING_H_ */

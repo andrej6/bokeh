@@ -12,7 +12,7 @@
 
 #include <glm/glm.hpp>
 
-#define EPSILON 0.00001f
+#define EPSILON 0.00005f
 extern const double PI;
 extern std::ostream *gl_error_stream;
 
@@ -44,11 +44,31 @@ double randf();
 uint32_t randi();
 
 // Generate a random vector in the [-1, 1] cube centered at the origin.
-static inline glm::vec3 randvec() {
+static inline glm::vec3 rand_vec() {
   float x = 2*randf() - 1.0,
         y = 2*randf() - 1.0,
         z = 2*randf() - 1.0;
   return glm::vec3(x, y, z);
+}
+
+// Construct a unit vector with angle theta in the xy plane and angle phi off
+// of the positive z-axis.
+static inline glm::vec3 unit_vec_from_angles(float theta, float phi) {
+  return glm::vec3(cos(theta)*sin(phi), sin(theta)*sin(phi), cos(phi));
+}
+
+// Generate a uniform random vector on the unit sphere centered at the origin.
+static inline glm::vec3 rand_unit_vec() {
+  return unit_vec_from_angles(2*PI*randf(), PI*randf());
+}
+
+// Generate uniform random barycentric coordinates (three non-negative numbers
+// that sum to 1).
+static inline glm::vec3 rand_barycentric() {
+  double r1 = randf();
+  double sqrt_r2 = sqrt(randf());
+
+  return glm::vec3(float(1 - sqrt_r2), float(sqrt_r2*(1.0 - r1)), float(r1*sqrt_r2));
 }
 
 // Convert degrees to radians.

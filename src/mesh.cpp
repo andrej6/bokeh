@@ -272,11 +272,25 @@ glm::vec3 Face::norm() const {
   return glm::normalize(glm::cross(a, b));
 }
 
+glm::vec3 Face::norm_transformed(const glm::mat4 &modelmat) const {
+  glm::vec3 n3 = norm();
+  glm::vec4 n4(n3.x, n3.y, n3.z, 0.0);
+  n4 = modelmat * n4;
+  return glm::normalize(glm::vec3(n4.x, n4.y, n4.z));
+}
+
 glm::vec3 Face::centroid() const {
   return (vert(0)->position()
       + vert(1)->position()
       + vert(2)->position())
     * 0.3333333333f;
+}
+
+glm::vec3 Face::centroid_transformed(const glm::mat4 &modelmat) const {
+  glm::vec3 c3 = centroid();
+  glm::vec4 c4(c3.x, c3.y, c3.z, 1.0);
+  c4 = modelmat * c4;
+  return glm::vec3(c4.x, c4.y, c4.z) / c4.w;
 }
 
 float Face::area() const {
@@ -297,7 +311,40 @@ Vertex *Face::vert(unsigned i) const {
   return e->vert();
 }
 
-void Face::transformed_verts(const glm::mat4 &transform,
+glm::vec3 Face::point_at_transformed(const glm::mat4 &modelmat,
+    float alpha, float beta, float gamma) const
+{
+  glm::vec3 a, b, c;
+  verts_transformed(modelmat, a, b, c);
+  return alpha*a + beta*b + gamma*c;
+}
+
+void Face::barycentric_coords(const glm::vec3 &point,
+    float &alpha, float &beta, float &gamma) const
+{
+  barycentric_coords_transformed(point, glm::mat4(1.0), alpha, beta, gamma);
+}
+
+void Face::barycentric_coords_transformed(
+    const glm::vec3 &point, const glm::mat4 &modelmat,
+    float &alpha, float &beta, float &gamma) const
+{
+  glm::vec3 a, b, c;
+  verts_transformed(modelmat, a, b, c);
+  ::barycentric_coords(point, a, b, c, alpha, beta, gamma);
+}
+
+glm::vec3 Face::random_point() const {
+  glm::vec3 c = rand_barycentric();
+  return point_at(c.x, c.y, c.z);
+}
+
+glm::vec3 Face::random_point_transformed(const glm::mat4 &modelmat) const {
+  glm::vec3 c = rand_barycentric();
+  return point_at_transformed(modelmat, c.x, c.y, c.z);
+}
+
+void Face::verts_transformed(const glm::mat4 &transform,
     glm::vec3 &va, glm::vec3 &vb, glm::vec3 &vc) const
 {
   glm::vec3 orig_a = vert(0)->position(),
@@ -317,13 +364,6 @@ void Face::transformed_verts(const glm::mat4 &transform,
   vc = glm::vec3(homog.x, homog.y, homog.z) / homog.w;
 }
 
-glm::vec3 Face::transformed_norm(const glm::mat4 &transform) const {
-  glm::vec3 orig_n = norm();
-  glm::vec4 n(orig_n.x, orig_n.y, orig_n.z, 0.0);
-  n = transform * n;
-  return glm::normalize(glm::vec3(n.x, n.y, n.z));
-}
-
 glm::vec3 Face::interpolate_norm(float alpha, float beta, float gamma) const {
   Edge *e = _edge;
   glm::vec3 n1 = e->vert_norm();
@@ -333,6 +373,15 @@ glm::vec3 Face::interpolate_norm(float alpha, float beta, float gamma) const {
   glm::vec3 n3 = e->vert_norm();
 
   return glm::normalize(alpha*n1 + beta*n2 + gamma*n3);
+}
+
+glm::vec3 Face::interpolate_norm_transformed(const glm::mat4 &modelmat,
+    float alpha, float beta, float gamma) const
+{
+  glm::vec3 n3 = interpolate_norm(alpha, beta, gamma);
+  glm::vec4 n4(n3.x, n3.y, n3.z, 0.0);
+  n4 = modelmat * n4;
+  return glm::normalize(glm::vec3(n4.x, n4.y, n4.z));
 }
 
 Mesh::Mesh(Mesh &&other) {
@@ -521,13 +570,6 @@ void Mesh::lazy_init_buffers() {
       }
       MeshVertData vd;
       vd.pos = e->vert()->position();
-
-      /*
-      vd.diffuse = glm::vec4(0.7, 0.7, 0.7, 1.0);
-      vd.specular = glm::vec4(0.9, 0.9, 0.9, 1.0);
-      vd.ambient = glm::vec4(0.3, 0.3, 0.3, 1.0);
-      vd.shiny = 50.0;
-      */
 
       if (glm::length(e->vert_norm()) < EPSILON) {
         vd.norm = face_norm;

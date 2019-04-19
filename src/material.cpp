@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cstdlib>
 
+#include "raytracing.h"
 #include "util.h"
 
 typedef std::unordered_map<Material::mtl_id, Material*> mtl_map_t;
@@ -118,6 +119,27 @@ std::vector<Material::mtl_id> add_materials_from_mtl(const char *filename) {
   }
 
   return ids;
+}
+
+glm::vec3 Material::shade(
+    const RayHit &incoming,
+    const RayHit &lightray) const
+{
+  glm::vec3 norm = incoming.norm();
+  glm::vec3 eye = -incoming.ray().direction();
+  glm::vec3 light = lightray.ray().direction();
+  glm::vec3 light_color = lightray.material()->emitted();
+
+  glm::vec3 color = _emitted;
+
+  float dot_nl = std::max(glm::dot(norm, light), 0.0f);
+  color += light_color * _diffuse * dot_nl;
+
+  glm::vec3 reflect = glm::normalize(2*dot_nl * norm - light);
+  float dot_er = std::max(glm::dot(eye, reflect), 0.0f);
+  color += light_color * specular() * std::pow(dot_er, shiny()) * dot_nl;
+
+  return color;
 }
 
 Material::mtl_id get_mtl_id(const char *name) {

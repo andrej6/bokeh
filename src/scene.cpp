@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <string>
+#include <unordered_set>
 
 #include <cstdlib>
 
@@ -179,6 +180,8 @@ Scene Scene::from_scn(const char *filename) {
     }
   }
 
+  scene._kd_tree = KDTree(scene._mesh_instances);
+  scene._kd_tree.add_debug_lines(scene._dbviz);
   return scene;
 }
 
@@ -195,25 +198,119 @@ void Scene::draw() {
   _raytree.set_viewmat(view);
   _raytree.set_projmat(proj);
   _raytree.draw();
+
+  if (_draw_kdtree) {
+    _dbviz.set_viewmat(view);
+    _dbviz.set_projmat(proj);
+    _dbviz.draw();
+  }
 }
 
-void Scene::trace_ray(double x, double y, const RayTreePtr &treeptr) const {
-  double norm_x = x / Canvas::width();
-  double norm_y = 1.0 - (y / Canvas::height());
-  trace_ray(_camera->cast_ray(norm_x, norm_y), treeptr);
+#define RAY_TYPE_ROOT     0
+#define RAY_TYPE_REFLECT  1
+
+glm::vec3 Scene::trace_ray(double x, double y, RayTreeNode *treenode, int bounces) const {
+  double center_x = x + 0.5;
+  double center_y = y + 0.5;
+  double norm_x = center_x / Canvas::width();
+  double norm_y = center_y / Canvas::height();
+  return trace_ray(_camera->cast_ray(norm_x, norm_y), treenode, bounces + 1, RAY_TYPE_ROOT);
 }
 
-void Scene::trace_ray(const Ray &ray, const RayTreePtr &treeptr) const {
-  RayHit rayhit(ray);
-
-  for (unsigned i = 0; i < _mesh_instances.size(); ++i) {
-    rayhit.intersect_mesh(_mesh_instances[i]);
+glm::vec3 Scene::trace_ray(const Ray &ray, RayTreeNode *treenode, int level, int type) const {
+  if (level <= 0) {
+    return glm::vec3(0,0,0);
   }
 
-  treeptr.add_child(rayhit, glm::vec3(0.0, 0.0, 1.0));
+  RayHit rayhit(ray);
+  std::unordered_set<KDTree::entry> culled_faces = _kd_tree.collect_possible_faces(ray);
+
+  for (auto i = culled_faces.begin(); i != culled_faces.end(); ++i) {
+    if (rayhit.intersect_face(*i->face, i->mesh_instance->modelmat())) {
+      rayhit.set_mesh_instance(i->mesh_instance);
+    }
+  }
+
+  glm::vec3 raytree_color;
+  if (type == RAY_TYPE_ROOT) {
+    raytree_color = glm::vec3(0, 0, 1);
+  } else {
+    raytree_color = glm::vec3(1, 0, 0);
+  }
+
+  if (treenode) {
+    treenode->add_child(rayhit, raytree_color);
+  }
+
+  if (!rayhit.intersected()) {
+    return _bg_color;
+  }
+
+  glm::vec3 color;
+  const Material *mtl = rayhit.material();
+  if (mtl) {
+    if (mtl->emittance_power() > 0.0) {
+      return glm::vec3(1.0, 1.0, 1.0);
+    } else {
+      color += mtl->ambient();
+    }
+  }
+
+  for (unsigned i = 0; i < _lights.size(); ++i) {
+    const MeshInstance *mi = &_mesh_instances[_lights[i]];
+    const Mesh *m = mi->mesh();
+    //const Material *light_mtl = mi->material();
+    glm::mat4 modelmat = mi->modelmat();
+    glm::vec3 lightcolor;
+
+    for (unsigned j = 0; j < 10; ++j) {
+      const Face *f = m->face(randi() % m->faces_size());
+      glm::vec3 facepoint = f->random_point_transformed(modelmat);
+      glm::vec3 origin(rayhit.intersection_point() + EPSILON*rayhit.norm());
+
+      RayHit lightray(origin, facepoint-origin);
+      lightray.intersect_mesh(*mi);
+      float light_t = lightray.t();
+
+      culled_faces = _kd_tree.collect_possible_faces(lightray.ray());
+
+      for (auto itr = culled_faces.begin(); itr != culled_faces.end(); ++itr) {
+        if (lightray.intersect_face(*itr->face, itr->mesh_instance->modelmat())) {
+          lightray.set_mesh_instance(itr->mesh_instance);
+        }
+      }
+
+      if (treenode) {
+        treenode->add_child(lightray, glm::vec3(0, 1, 0));
+      }
+
+      if (lightray.t() < light_t) {
+        continue;
+      }
+
+      lightcolor += mtl->shade(rayhit, lightray);
+    }
+
+    color += lightcolor / 10.0f;
+  }
+
+  if (mtl->reflect_on()) {
+    glm::vec3 n = rayhit.norm();
+    glm::vec3 origin = rayhit.intersection_point() + EPSILON*n;
+    glm::vec3 incident = rayhit.ray().direction();
+    glm::vec3 reflected = incident - 2.0f*glm::dot(incident, n)*n;
+
+    Ray reflect(origin, reflected);
+    color += mtl->specular() * trace_ray(reflect, treenode, level-1, RAY_TYPE_REFLECT);
+  }
+
+  color.r = std::min(color.r, 1.0f);
+  color.g = std::min(color.g, 1.0f);
+  color.b = std::min(color.b, 1.0f);
+  return color;
 }
 
 void Scene::visualize_raytree(double x, double y) {
   _raytree.clear();
-  trace_ray(x, y, _raytree.root());
+  trace_ray(x, y, &_raytree.root(), 3);
 }

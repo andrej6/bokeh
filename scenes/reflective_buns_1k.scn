@@ -14,7 +14,7 @@ mesh square square.obj
 materials materials.mtl
 
 # Background color. Repeats override previous definitions.
-bgc 0.2 0.1 0.6
+bgc 0.6 0.5 0.8
 
 # possible camera specifications:
 #   camera perspective <field of view>
