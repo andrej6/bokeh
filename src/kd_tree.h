@@ -54,6 +54,14 @@ class KDTree {
       bool operator==(const entry &other) const {
         return other.face == face && other.mesh_instance == mesh_instance;
       }
+
+      glm::vec3 centroid() const {
+        return face->centroid_transformed(mesh_instance->modelmat());
+      }
+
+      void verts(glm::vec3 &v1, glm::vec3 &v2, glm::vec3 &v3) const {
+        face->verts_transformed(mesh_instance->modelmat(), v1, v2, v3);
+      }
     };
 
     KDTree() : _child1(NULL), _child2(NULL) {}
@@ -76,15 +84,10 @@ class KDTree {
     void move(KDTree&&);
     void destroy();
 
-    struct vert_entry {
-      glm::vec3 pos;
-      const entry *ent;
-    };
-
     struct sorted_data {
-      std::vector<vert_entry*> by_x;
-      std::vector<vert_entry*> by_y;
-      std::vector<vert_entry*> by_z;
+      std::vector<entry*> by_x;
+      std::vector<entry*> by_y;
+      std::vector<entry*> by_z;
     };
 
     void construct(const sorted_data &sorted, const BBox &bbox);
@@ -99,7 +102,7 @@ class KDTree {
 
     std::vector<entry> _entries;
 
-    friend struct CompVertEntries;
+    friend struct CompByAxis;
 };
 
 template <>

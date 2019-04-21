@@ -106,6 +106,23 @@ uint32_t randi() {
   return rand_engine();
 }
 
+glm::vec3 apply_homog(const glm::mat4 &mat, const glm::vec3 &vec, int type) {
+  assert(type == VEC3_DIR || type == VEC3_POINT);
+
+  glm::vec4 homog(vec.x, vec.y, vec.z, 0.0);
+  if (type == VEC3_POINT) {
+    homog.w = 1.0;
+  }
+  homog = mat * homog;
+
+  glm::vec3 res(homog.x, homog.y, homog.z);
+  if (type != VEC3_DIR) {
+    res = res / homog.w;
+  }
+
+  return res;
+}
+
 void barycentric_coords(
     const glm::vec3 &point,
     const glm::vec3 &va, const glm::vec3 &vb, const glm::vec3 &vc,

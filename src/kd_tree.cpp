@@ -111,94 +111,100 @@ void BBox::add_debug_lines(DebugViz &dbviz) const {
   dbviz.add_line(pt110, pt111, color);
 }
 
-struct CompVertEntries {
-  int axis;
-  typedef KDTree::vert_entry vert_entry;
-  bool operator()(const vert_entry *ve1, const vert_entry *ve2) const {
-    float d1, d2;
-    if (axis == X_AXIS) {
-      d1 = ve1->pos.x;
-      d2 = ve2->pos.x;
-    } else if (axis == Y_AXIS) {
-      d1 = ve1->pos.y;
-      d2 = ve2->pos.y;
-    } else {
-      d1 = ve1->pos.z;
-      d2 = ve2->pos.z;
-    }
+#define SPLIT_LEFT    0
+#define SPLIT_RIGHT   1
+#define SPLIT_NEITHER 2
 
-    return d1 < d2;
+struct CompByAxis {
+  int axis;
+  typedef KDTree::entry entry;
+
+  float get_coord(const glm::vec3 &v) const {
+    if (axis == X_AXIS) {
+      return v.x;
+    } else if (axis == Y_AXIS) {
+      return v.y;
+    } else {
+      return v.z;
+    }
   }
 
-  bool operator()(const vert_entry *ve, float plane) const {
-    float d;
-    if (axis == X_AXIS) {
-      d = ve->pos.x;
-    } else if (axis == Y_AXIS) {
-      d = ve->pos.y;
-    } else {
-      d = ve->pos.z;
+  bool operator()(const entry *e1, const entry *e2) const {
+    glm::vec3 p1 = e1->face->centroid_transformed(e1->mesh_instance->modelmat());
+    glm::vec3 p2 = e2->face->centroid_transformed(e2->mesh_instance->modelmat());
+    return (*this)(p1, get_coord(p2));
+  }
+
+  bool operator()(const entry *e, float plane) const {
+    glm::vec3 p = e->face->centroid_transformed(e->mesh_instance->modelmat());
+    return (*this)(p, plane);
+  }
+
+  bool operator()(const glm::vec3 &v, float plane) const {
+    return get_coord(v) < plane;
+  }
+
+  int face_split(const entry *e, float plane) const {
+    glm::vec3 verts[3];
+    e->verts(verts[0], verts[1], verts[2]);
+    int count = 0;
+    for (unsigned i = 0; i < 3; ++i) {
+      if (!(*this)(verts[i], plane)) {
+        count++;
+      }
     }
 
-    return d < plane;
+    if (count == 0) {
+      return SPLIT_LEFT;
+    } else if (count == 3) {
+      return SPLIT_RIGHT;
+    } else {
+      return SPLIT_NEITHER;
+    }
   }
 };
 
 KDTree::KDTree(const std::vector<MeshInstance> &meshes) {
   std::vector<entry> entries;
-  std::vector<vert_entry> vert_entries;
   sorted_data sorted;
+
+  glm::vec3 min(1.0f/0.0f); // Get ourselves some nice infinities up in here...
+  glm::vec3 max(-1.0f/0.0f);
 
   for (unsigned i = 0; i < meshes.size(); ++i) {
     const MeshInstance *mi = &meshes[i];
     const Mesh *m = mi->mesh();
+    glm::mat4 modelmat(mi->modelmat());
 
     for (Mesh::face_iterator fi = m->faces_begin(); fi != m->faces_end(); ++fi) {
+      glm::vec3 verts[3];
+      (*fi)->verts_transformed(modelmat, verts[0], verts[1], verts[2]);
+      for (unsigned v = 0; v < 3; ++v) {
+        max.x = std::max(verts[v].x, max.x);
+        max.y = std::max(verts[v].y, max.y);
+        max.z = std::max(verts[v].z, max.z);
+        min.x = std::min(verts[v].x, min.x);
+        min.y = std::min(verts[v].y, min.y);
+        min.z = std::min(verts[v].z, min.z);
+      }
+
       entry ent = { *fi, mi };
       entries.push_back(ent);
     }
   }
 
   for (unsigned i = 0; i < entries.size(); ++i) {
-    const entry *e = &entries[i];
-    const Face *f = e->face;
-    const MeshInstance *mi = e->mesh_instance;
-    glm::mat4 modelmat = mi->modelmat();
-
-    for (unsigned i = 0; i < 3; ++i) {
-      vert_entry ve;
-      ve.ent = e;
-      glm::vec3 pos = f->vert(i)->position();
-      glm::vec4 homog(pos.x, pos.y, pos.z, 1.0);
-      homog = modelmat * homog;
-      ve.pos = glm::vec3(homog.x, homog.y, homog.z) / homog.w;
-      vert_entries.push_back(ve);
-    }
+    entry *e = &entries[i];
+    sorted.by_x.push_back(e);
+    sorted.by_y.push_back(e);
+    sorted.by_z.push_back(e);
   }
 
-  for (unsigned i = 0; i < vert_entries.size(); ++i) {
-    vert_entry *ve = &vert_entries[i];
-    sorted.by_x.push_back(ve);
-    sorted.by_y.push_back(ve);
-    sorted.by_z.push_back(ve);
-  }
+  std::sort(sorted.by_x.begin(), sorted.by_x.end(), CompByAxis { X_AXIS });
+  std::sort(sorted.by_y.begin(), sorted.by_y.end(), CompByAxis { Y_AXIS });
+  std::sort(sorted.by_z.begin(), sorted.by_z.end(), CompByAxis { Z_AXIS });
 
-  std::sort(sorted.by_x.begin(), sorted.by_x.end(), CompVertEntries { X_AXIS });
-  std::sort(sorted.by_y.begin(), sorted.by_y.end(), CompVertEntries { Y_AXIS });
-  std::sort(sorted.by_z.begin(), sorted.by_z.end(), CompVertEntries { Z_AXIS });
-
-  glm::vec3 min(
-    sorted.by_x.front()->pos.x - EPSILON,
-    sorted.by_y.front()->pos.y - EPSILON,
-    sorted.by_z.front()->pos.z - EPSILON
-  );
-  glm::vec3 max(
-    sorted.by_x.back()->pos.x + EPSILON,
-    sorted.by_y.back()->pos.y + EPSILON,
-    sorted.by_z.back()->pos.z + EPSILON
-  );
-
-  BBox bbox(min, max);
+  BBox bbox(min - glm::vec3(EPSILON), max + glm::vec3(EPSILON));
 
   construct(sorted, bbox);
 }
@@ -244,30 +250,30 @@ void KDTree::add_intersecting(const Ray &ray, std::unordered_set<entry> &set) co
 void KDTree::construct(const sorted_data &sorted, const BBox &bbox) {
   _bbox = bbox;
 
-  if (sorted.by_x.size() <= 8) {
+  if (sorted.by_x.size() <= 32) {
     for (unsigned i = 0; i < sorted.by_x.size(); ++i) {
-      _entries.push_back(*(sorted.by_x[i]->ent));
+      _entries.push_back(*sorted.by_x[i]);
     }
     return;
   }
 
-  float range_x = sorted.by_x.back()->pos.x - sorted.by_x.front()->pos.x;
-  float range_y = sorted.by_y.back()->pos.y - sorted.by_y.front()->pos.y;
-  float range_z = sorted.by_z.back()->pos.z - sorted.by_z.front()->pos.z;
+  float range_x = sorted.by_x.back()->centroid().x - sorted.by_x.front()->centroid().x;
+  float range_y = sorted.by_y.back()->centroid().y - sorted.by_y.front()->centroid().y;
+  float range_z = sorted.by_z.back()->centroid().z - sorted.by_z.front()->centroid().z;
 
   float mid1, mid2;
   if (range_x >= range_y && range_x >= range_z) {
     _axis = X_AXIS;
-    mid1 = sorted.by_x[sorted.by_x.size() / 2 - 1]->pos.x;
-    mid2 = sorted.by_x[sorted.by_x.size() / 2]->pos.x;
+    mid1 = sorted.by_x[sorted.by_x.size() / 2 - 1]->centroid().x;
+    mid2 = sorted.by_x[sorted.by_x.size() / 2]->centroid().x;
   } else if (range_y >= range_x && range_y >= range_z) {
     _axis = Y_AXIS;
-    mid1 = sorted.by_y[sorted.by_y.size() / 2 - 1]->pos.y;
-    mid2 = sorted.by_y[sorted.by_y.size() / 2]->pos.y;
+    mid1 = sorted.by_y[sorted.by_y.size() / 2 - 1]->centroid().y;
+    mid2 = sorted.by_y[sorted.by_y.size() / 2]->centroid().y;
   } else {
     _axis = Z_AXIS;
-    mid1 = sorted.by_z[sorted.by_z.size() / 2 - 1]->pos.z;
-    mid2 = sorted.by_z[sorted.by_z.size() / 2]->pos.z;
+    mid1 = sorted.by_z[sorted.by_z.size() / 2 - 1]->centroid().z;
+    mid2 = sorted.by_z[sorted.by_z.size() / 2]->centroid().z;
   }
 
   _plane = 0.5f * (mid1 + mid2);
@@ -286,29 +292,35 @@ void KDTree::construct(const sorted_data &sorted, const BBox &bbox) {
 
   if (bbox1.volume() < EPSILON || bbox2.volume() < EPSILON) {
     for (unsigned i = 0; i < sorted.by_x.size(); ++i) {
-      _entries.push_back(*(sorted.by_x[i]->ent));
+      _entries.push_back(*sorted.by_x[i]);
     }
     return;
   }
 
-  CompVertEntries comp = { _axis };
+  CompByAxis comp = { _axis };
   sorted_data sorted1, sorted2;
   for (unsigned i = 0; i < sorted.by_x.size(); ++i) {
-    if (comp(sorted.by_x[i], _plane)) {
+    int splitx = comp.face_split(sorted.by_x[i], _plane);
+    int splity = comp.face_split(sorted.by_y[i], _plane);
+    int splitz = comp.face_split(sorted.by_z[i], _plane);
+
+    if (splitx == SPLIT_LEFT) {
       sorted1.by_x.push_back(sorted.by_x[i]);
-    } else {
+    } else if (splitx == SPLIT_RIGHT) {
       sorted2.by_x.push_back(sorted.by_x[i]);
+    } else {
+      _entries.push_back(*sorted.by_x[i]);
     }
 
-    if (comp(sorted.by_y[i], _plane)) {
+    if (splity == SPLIT_LEFT) {
       sorted1.by_y.push_back(sorted.by_y[i]);
-    } else {
+    } else if (splity == SPLIT_RIGHT) {
       sorted2.by_y.push_back(sorted.by_y[i]);
     }
 
-    if (comp(sorted.by_z[i], _plane)) {
+    if (splitz == SPLIT_LEFT) {
       sorted1.by_z.push_back(sorted.by_z[i]);
-    } else {
+    } else if (splitz == SPLIT_RIGHT) {
       sorted2.by_z.push_back(sorted.by_z[i]);
     }
   }

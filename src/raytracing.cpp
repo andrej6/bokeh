@@ -122,7 +122,7 @@ bool RayTracing::trace_next_pixel() {
   }
 
   double center_x = double(_trace_x) + 0.5;
-  double center_y = double(_image.height() - _trace_y - 1) + 0.5;
+  double center_y = double(_trace_y) + 0.5;
 
   glm::vec3 color = _scene->trace_ray(center_x, center_y, 3);
   _image.set_pixel(_trace_x, _trace_y, glm::vec4(color.r, color.g, color.b, 1.0));

@@ -75,7 +75,7 @@ class Image {
 
   private:
     unsigned index(unsigned x, unsigned y) const {
-      return y*_w + x;
+      return (_h - y - 1)*_w + x;
     }
 
     unsigned char charval(float x) const {

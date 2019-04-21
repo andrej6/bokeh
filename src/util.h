@@ -71,6 +71,20 @@ static inline glm::vec3 rand_barycentric() {
   return glm::vec3(float(1 - sqrt_r2), float(sqrt_r2*(1.0 - r1)), float(r1*sqrt_r2));
 }
 
+#define VEC3_DIR   0
+#define VEC3_POINT 1
+
+// Apply 4x4 homogeneous matrix to a 3-vector, and get a homogenized 3-vector of
+// the result. The third argument `type` should be one of `VEC3_POINT` or
+// `VEC3_DIR`; the former indicates that the full affine transformation, including
+// translation, should be applied, while the latter indicates that only the
+// linear parts of the transformation should be applied.
+glm::vec3 apply_homog(const glm::mat4 &mat, const glm::vec3 &vec, int type = VEC3_POINT);
+
+void barycentric_coords(const glm::vec3 &point,
+    const glm::vec3 &va, const glm::vec3 &vb, const glm::vec3 &vc,
+    float &alpha, float &beta, float &gamma);
+
 // Convert degrees to radians.
 static inline double deg_to_rad(double d) {
   return d * PI / 180.0;
@@ -80,10 +94,6 @@ static inline double deg_to_rad(double d) {
 static inline double rad_to_deg(double r) {
   return r * 180.0 / PI;
 }
-
-void barycentric_coords(const glm::vec3 &point,
-    const glm::vec3 &va, const glm::vec3 &vb, const glm::vec3 &vc,
-    float &alpha, float &beta, float &gamma);
 
 // Split a string into substrings delimited by the characters in `delims`. If `multi` is
 // true, split() will treat any sequence of consecutive characters in `delims` as a single
