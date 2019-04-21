@@ -14,7 +14,6 @@ class Scene {
   public:
     Scene(Scene &&other) {
       _mesh_instances = std::move(other._mesh_instances);
-      _kd_tree = std::move(other._kd_tree);
       _lights = std::move(other._lights);
       _raytree = std::move(other._raytree);
       _camera = other._camera;
@@ -24,7 +23,6 @@ class Scene {
 
     Scene &operator=(Scene &&other) {
       _mesh_instances = std::move(other._mesh_instances);
-      _kd_tree = std::move(other._kd_tree);
       _lights = std::move(other._lights);
       _raytree = std::move(other._raytree);
       _camera = other._camera;
@@ -61,7 +59,6 @@ class Scene {
     glm::vec3 trace_ray(const Ray &ray, RayTreeNode *treenode, int level, int type) const;
 
     std::vector<MeshInstance> _mesh_instances;
-    KDTree _kd_tree;
     DebugViz _dbviz;
     std::vector<size_t> _lights;
     RayTree _raytree;

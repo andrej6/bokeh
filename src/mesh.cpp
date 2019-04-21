@@ -205,6 +205,7 @@ Mesh Mesh::from_obj(std::istream &infile) {
   }
 
   m.compute_vert_norms();
+  m._kd_tree = KDTree(&m);
   return m;
 }
 
@@ -702,12 +703,20 @@ void MeshInstance::draw() {
   dbviz->draw();
 }
 
+void MeshInstance::draw_kd_tree() {
+  _dbviz.clear();
+  mesh()->kd_tree().add_debug_lines(_dbviz, modelmat());
+  _dbviz.draw();
+}
+
 void MeshInstance::set_viewmat(const glm::mat4 &viewmat) {
   _viewmat = viewmat;
+  _dbviz.set_viewmat(viewmat);
 }
 
 void MeshInstance::set_projmat(const glm::mat4 &projmat) {
   _projmat = projmat;
+  _dbviz.set_projmat(projmat);
 }
 
 glm::mat4 MeshInstance::modelmat() const {

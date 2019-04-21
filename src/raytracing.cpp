@@ -38,9 +38,11 @@ bool RayHit::intersect_mesh(const MeshInstance &mesh) {
   glm::mat4 modelmat = mesh.modelmat();
   Mesh *m = mesh.mesh();
 
+  std::unordered_set<const Face*> culled_faces = m->kd_tree().collect_possible_faces(ray(), modelmat);
+
   bool intersected = false;
 
-  for (Mesh::face_iterator itr = m->faces_begin(); itr != m->faces_end(); ++itr) {
+  for (auto itr = culled_faces.begin(); itr != culled_faces.end(); ++itr) {
     intersected |= this->intersect_face(**itr, modelmat);
   }
 

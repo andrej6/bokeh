@@ -8,8 +8,11 @@
 
 #include <glm/glm.hpp>
 
-#include "mesh.h"
-#include "raytracing.h"
+#include "debug_viz.h"
+
+class Ray;
+class Mesh;
+class Face;
 
 class BBox {
   public:
@@ -39,7 +42,7 @@ class BBox {
 
     float volume() const { return x_range() * y_range() * z_range(); }
 
-    void add_debug_lines(DebugViz &dbviz) const;
+    void add_debug_lines(DebugViz &dbviz, const glm::mat4 &modelmat = glm::mat4(1.0)) const;
 
   private:
     glm::vec3 _min;
@@ -48,22 +51,6 @@ class BBox {
 
 class KDTree {
   public:
-    struct entry {
-      const Face *face;
-      const MeshInstance *mesh_instance;
-      bool operator==(const entry &other) const {
-        return other.face == face && other.mesh_instance == mesh_instance;
-      }
-
-      glm::vec3 centroid() const {
-        return face->centroid_transformed(mesh_instance->modelmat());
-      }
-
-      void verts(glm::vec3 &v1, glm::vec3 &v2, glm::vec3 &v3) const {
-        face->verts_transformed(mesh_instance->modelmat(), v1, v2, v3);
-      }
-    };
-
     KDTree() : _child1(NULL), _child2(NULL) {}
     KDTree(const KDTree &other) { copy(other); }
     KDTree(KDTree &&other) { move(std::move(other)); }
@@ -73,11 +60,12 @@ class KDTree {
 
     ~KDTree() { destroy(); }
 
-    KDTree(const std::vector<MeshInstance> &meshes);
+    KDTree(const Mesh *mesh);
 
-    std::unordered_set<entry> collect_possible_faces(const Ray &ray) const;
+    std::unordered_set<const Face*> collect_possible_faces(const Ray &ray,
+        const glm::mat4 &modelmat = glm::mat4(1.0)) const;
 
-    void add_debug_lines(DebugViz &dbviz) const;
+    void add_debug_lines(DebugViz &dbviz, const glm::mat4 &modelmat) const;
 
   private:
     void copy(const KDTree&);
@@ -85,13 +73,13 @@ class KDTree {
     void destroy();
 
     struct sorted_data {
-      std::vector<entry*> by_x;
-      std::vector<entry*> by_y;
-      std::vector<entry*> by_z;
+      std::vector<const Face*> by_x;
+      std::vector<const Face*> by_y;
+      std::vector<const Face*> by_z;
     };
 
     void construct(const sorted_data &sorted, const BBox &bbox);
-    void add_intersecting(const Ray &ray, std::unordered_set<entry> &set) const;
+    void add_intersecting(const Ray &ray, std::unordered_set<const Face*> &set) const;
 
     BBox _bbox;
     KDTree *_child1;
@@ -100,11 +88,12 @@ class KDTree {
     int _axis;
     float _plane;
 
-    std::vector<entry> _entries;
+    std::vector<const Face*> _faces;
 
     friend struct CompByAxis;
 };
 
+/*
 template <>
 struct std::hash<KDTree::entry> {
   size_t operator()(const KDTree::entry &ent) const {
@@ -112,5 +101,6 @@ struct std::hash<KDTree::entry> {
       + std::hash<const MeshInstance*>()(ent.mesh_instance);
   }
 };
+*/
 
 #endif /* KD_TREE_H_ */

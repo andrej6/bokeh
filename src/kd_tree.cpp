@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include "mesh.h"
+#include "raytracing.h"
 #include "util.h"
 
 #define X_AXIS 0
@@ -85,15 +87,15 @@ bool BBox::ray_intersects(const Ray &ray) const {
   return false;
 }
 
-void BBox::add_debug_lines(DebugViz &dbviz) const {
-  glm::vec3 pt000(_min);
-  glm::vec3 pt001(_min.x, _min.y, _max.z);
-  glm::vec3 pt010(_min.x, _max.y, _min.z);
-  glm::vec3 pt011(_min.x, _max.y, _max.z);
-  glm::vec3 pt100(_max.x, _min.y, _min.z);
-  glm::vec3 pt101(_max.x, _min.y, _max.z);
-  glm::vec3 pt110(_max.x, _max.y, _min.z);
-  glm::vec3 pt111(_max);
+void BBox::add_debug_lines(DebugViz &dbviz, const glm::mat4 &modelmat) const {
+  glm::vec3 pt000 = apply_homog(modelmat, _min, VEC3_POINT);
+  glm::vec3 pt001 = apply_homog(modelmat, glm::vec3(_min.x, _min.y, _max.z), VEC3_POINT);
+  glm::vec3 pt010 = apply_homog(modelmat, glm::vec3(_min.x, _max.y, _min.z), VEC3_POINT);
+  glm::vec3 pt011 = apply_homog(modelmat, glm::vec3(_min.x, _max.y, _max.z), VEC3_POINT);
+  glm::vec3 pt100 = apply_homog(modelmat, glm::vec3(_max.x, _min.y, _min.z), VEC3_POINT);
+  glm::vec3 pt101 = apply_homog(modelmat, glm::vec3(_max.x, _min.y, _max.z), VEC3_POINT);
+  glm::vec3 pt110 = apply_homog(modelmat, glm::vec3(_max.x, _max.y, _min.z), VEC3_POINT);
+  glm::vec3 pt111 = apply_homog(modelmat, _max, VEC3_POINT);
 
   glm::vec4 color(0.7, 0.9, 1.0, 1.0);
 
@@ -117,7 +119,6 @@ void BBox::add_debug_lines(DebugViz &dbviz) const {
 
 struct CompByAxis {
   int axis;
-  typedef KDTree::entry entry;
 
   float get_coord(const glm::vec3 &v) const {
     if (axis == X_AXIS) {
@@ -129,14 +130,14 @@ struct CompByAxis {
     }
   }
 
-  bool operator()(const entry *e1, const entry *e2) const {
-    glm::vec3 p1 = e1->face->centroid_transformed(e1->mesh_instance->modelmat());
-    glm::vec3 p2 = e2->face->centroid_transformed(e2->mesh_instance->modelmat());
+  bool operator()(const Face *f1, const Face *f2) const {
+    glm::vec3 p1 = f1->centroid();
+    glm::vec3 p2 = f2->centroid();
     return (*this)(p1, get_coord(p2));
   }
 
-  bool operator()(const entry *e, float plane) const {
-    glm::vec3 p = e->face->centroid_transformed(e->mesh_instance->modelmat());
+  bool operator()(const Face *f, float plane) const {
+    glm::vec3 p = f->centroid();
     return (*this)(p, plane);
   }
 
@@ -144,12 +145,10 @@ struct CompByAxis {
     return get_coord(v) < plane;
   }
 
-  int face_split(const entry *e, float plane) const {
-    glm::vec3 verts[3];
-    e->verts(verts[0], verts[1], verts[2]);
+  int face_split(const Face *f, float plane) const {
     int count = 0;
     for (unsigned i = 0; i < 3; ++i) {
-      if (!(*this)(verts[i], plane)) {
+      if (!(*this)(f->vert(i)->position(), plane)) {
         count++;
       }
     }
@@ -164,40 +163,27 @@ struct CompByAxis {
   }
 };
 
-KDTree::KDTree(const std::vector<MeshInstance> &meshes) {
-  std::vector<entry> entries;
+KDTree::KDTree(const Mesh *mesh) : _child1(NULL), _child2(NULL) {
+  std::vector<const Face*> faces;
   sorted_data sorted;
 
   glm::vec3 min(1.0f/0.0f); // Get ourselves some nice infinities up in here...
   glm::vec3 max(-1.0f/0.0f);
 
-  for (unsigned i = 0; i < meshes.size(); ++i) {
-    const MeshInstance *mi = &meshes[i];
-    const Mesh *m = mi->mesh();
-    glm::mat4 modelmat(mi->modelmat());
-
-    for (Mesh::face_iterator fi = m->faces_begin(); fi != m->faces_end(); ++fi) {
-      glm::vec3 verts[3];
-      (*fi)->verts_transformed(modelmat, verts[0], verts[1], verts[2]);
-      for (unsigned v = 0; v < 3; ++v) {
-        max.x = std::max(verts[v].x, max.x);
-        max.y = std::max(verts[v].y, max.y);
-        max.z = std::max(verts[v].z, max.z);
-        min.x = std::min(verts[v].x, min.x);
-        min.y = std::min(verts[v].y, min.y);
-        min.z = std::min(verts[v].z, min.z);
-      }
-
-      entry ent = { *fi, mi };
-      entries.push_back(ent);
+  for (Mesh::face_iterator fi = mesh->faces_begin(); fi != mesh->faces_end(); ++fi) {
+    for (unsigned v = 0; v < 3; ++v) {
+      max.x = std::max((*fi)->vert(v)->position().x, max.x);
+      max.y = std::max((*fi)->vert(v)->position().y, max.y);
+      max.z = std::max((*fi)->vert(v)->position().z, max.z);
+      min.x = std::min((*fi)->vert(v)->position().x, min.x);
+      min.y = std::min((*fi)->vert(v)->position().y, min.y);
+      min.z = std::min((*fi)->vert(v)->position().z, min.z);
     }
-  }
 
-  for (unsigned i = 0; i < entries.size(); ++i) {
-    entry *e = &entries[i];
-    sorted.by_x.push_back(e);
-    sorted.by_y.push_back(e);
-    sorted.by_z.push_back(e);
+    faces.push_back(*fi);
+    sorted.by_x.push_back(*fi);
+    sorted.by_y.push_back(*fi);
+    sorted.by_z.push_back(*fi);
   }
 
   std::sort(sorted.by_x.begin(), sorted.by_x.end(), CompByAxis { X_AXIS });
@@ -209,33 +195,38 @@ KDTree::KDTree(const std::vector<MeshInstance> &meshes) {
   construct(sorted, bbox);
 }
 
-std::unordered_set<KDTree::entry> KDTree::collect_possible_faces(const Ray &ray) const {
-  std::unordered_set<entry> set;
-  add_intersecting(ray, set);
+std::unordered_set<const Face*> KDTree::collect_possible_faces(const Ray &ray,
+    const glm::mat4 &modelmat) const
+{
+  glm::mat4 inv_modelmat = glm::inverse(modelmat);
+  Ray inv_ray(apply_homog(inv_modelmat, ray.origin(), VEC3_POINT),
+      apply_homog(inv_modelmat, ray.direction(), VEC3_DIR));
+  std::unordered_set<const Face*> set;
+  add_intersecting(inv_ray, set);
   return set;
 }
 
-void KDTree::add_debug_lines(DebugViz &dbviz) const {
+void KDTree::add_debug_lines(DebugViz &dbviz, const glm::mat4 &modelmat) const {
   if (!_child1 || !_child2) {
-    _bbox.add_debug_lines(dbviz);
+    _bbox.add_debug_lines(dbviz, modelmat);
   }
 
   if (_child1) {
-    _child1->add_debug_lines(dbviz);
+    _child1->add_debug_lines(dbviz, modelmat);
   }
 
   if (_child2) {
-    _child2->add_debug_lines(dbviz);
+    _child2->add_debug_lines(dbviz, modelmat);
   }
 }
 
-void KDTree::add_intersecting(const Ray &ray, std::unordered_set<entry> &set) const {
+void KDTree::add_intersecting(const Ray &ray, std::unordered_set<const Face*> &set) const {
   if (!_bbox.ray_intersects(ray)) {
     return;
   }
 
-  for (unsigned i = 0; i < _entries.size(); ++i) {
-    set.insert(_entries[i]);
+  for (unsigned i = 0; i < _faces.size(); ++i) {
+    set.insert(_faces[i]);
   }
 
   if (_child1) {
@@ -250,9 +241,9 @@ void KDTree::add_intersecting(const Ray &ray, std::unordered_set<entry> &set) co
 void KDTree::construct(const sorted_data &sorted, const BBox &bbox) {
   _bbox = bbox;
 
-  if (sorted.by_x.size() <= 32) {
+  if (sorted.by_x.size() <= 16) {
     for (unsigned i = 0; i < sorted.by_x.size(); ++i) {
-      _entries.push_back(*sorted.by_x[i]);
+      _faces.push_back(sorted.by_x[i]);
     }
     return;
   }
@@ -292,7 +283,7 @@ void KDTree::construct(const sorted_data &sorted, const BBox &bbox) {
 
   if (bbox1.volume() < EPSILON || bbox2.volume() < EPSILON) {
     for (unsigned i = 0; i < sorted.by_x.size(); ++i) {
-      _entries.push_back(*sorted.by_x[i]);
+      _faces.push_back(sorted.by_x[i]);
     }
     return;
   }
@@ -309,7 +300,7 @@ void KDTree::construct(const sorted_data &sorted, const BBox &bbox) {
     } else if (splitx == SPLIT_RIGHT) {
       sorted2.by_x.push_back(sorted.by_x[i]);
     } else {
-      _entries.push_back(*sorted.by_x[i]);
+      _faces.push_back(sorted.by_x[i]);
     }
 
     if (splity == SPLIT_LEFT) {
@@ -338,7 +329,7 @@ void KDTree::copy(const KDTree &other) {
   _child2 = new KDTree(*other._child2);
   _axis = other._axis;
   _plane = other._plane;
-  _entries = other._entries;
+  _faces = other._faces;
 }
 
 void KDTree::move(KDTree &&other) {
@@ -347,7 +338,7 @@ void KDTree::move(KDTree &&other) {
   _child2 = other._child2;
   _axis = other._axis;
   _plane = other._plane;
-  _entries = std::move(other._entries);
+  _faces = std::move(other._faces);
 
   other._child1 = other._child2 = NULL;
 }
@@ -363,5 +354,5 @@ void KDTree::destroy() {
 
   _child1 = _child2 = NULL;
 
-  _entries.clear();
+  _faces.clear();
 }

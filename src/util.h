@@ -12,7 +12,7 @@
 
 #include <glm/glm.hpp>
 
-#define EPSILON 0.00005f
+#define EPSILON 0.00075f
 extern const double PI;
 extern std::ostream *gl_error_stream;
 

@@ -16,6 +16,7 @@
 
 #include "debug_viz.h"
 #include "material.h"
+#include "kd_tree.h"
 
 class Vertex;
 class Edge;
@@ -249,6 +250,8 @@ class Mesh {
     size_t edges_size() const { return _edges.size(); }
     size_t faces_size() const { return _faces.size(); }
 
+    const KDTree &kd_tree() const { return _kd_tree; }
+
   private:
     Mesh() : _inited_buf(false), _vbuf(0), _vao(0) {}
 
@@ -258,6 +261,7 @@ class Mesh {
     std::vector<Vertex*> _vertices;
     std::vector<Edge*> _edges;
     std::vector<Face*> _faces;
+    KDTree _kd_tree;
 
     edge_map_t _edge_map;
 
@@ -299,6 +303,8 @@ class MeshInstance {
     // Draw the mesh instance with the current transformation, view, projection, and
     // material.
     void draw();
+
+    void draw_kd_tree();
 
     // Translate the mesh instance by the given vector.
     void translate(const glm::vec3 &offset) {
@@ -365,6 +371,8 @@ class MeshInstance {
 
     glm::mat4 _viewmat;
     glm::mat4 _projmat;
+
+    DebugViz _dbviz;
 };
 
 #endif /* MESH_H_ */

@@ -180,8 +180,6 @@ Scene Scene::from_scn(const char *filename) {
     }
   }
 
-  scene._kd_tree = KDTree(scene._mesh_instances);
-  scene._kd_tree.add_debug_lines(scene._dbviz);
   return scene;
 }
 
@@ -200,9 +198,9 @@ void Scene::draw() {
   _raytree.draw();
 
   if (_draw_kdtree) {
-    _dbviz.set_viewmat(view);
-    _dbviz.set_projmat(proj);
-    _dbviz.draw();
+    for (unsigned i = 0; i < _mesh_instances.size(); ++i) {
+      _mesh_instances[i].draw_kd_tree();
+    }
   }
 }
 
@@ -223,12 +221,9 @@ glm::vec3 Scene::trace_ray(const Ray &ray, RayTreeNode *treenode, int level, int
   }
 
   RayHit rayhit(ray);
-  std::unordered_set<KDTree::entry> culled_faces = _kd_tree.collect_possible_faces(ray);
 
-  for (auto i = culled_faces.begin(); i != culled_faces.end(); ++i) {
-    if (rayhit.intersect_face(*i->face, i->mesh_instance->modelmat())) {
-      rayhit.set_mesh_instance(i->mesh_instance);
-    }
+  for (unsigned i = 0; i < _mesh_instances.size(); ++i) {
+    rayhit.intersect_mesh(_mesh_instances[i]);
   }
 
   glm::vec3 raytree_color;
@@ -272,12 +267,8 @@ glm::vec3 Scene::trace_ray(const Ray &ray, RayTreeNode *treenode, int level, int
       lightray.intersect_mesh(*mi);
       float light_t = lightray.t();
 
-      culled_faces = _kd_tree.collect_possible_faces(lightray.ray());
-
-      for (auto itr = culled_faces.begin(); itr != culled_faces.end(); ++itr) {
-        if (lightray.intersect_face(*itr->face, itr->mesh_instance->modelmat())) {
-          lightray.set_mesh_instance(itr->mesh_instance);
-        }
+      for (unsigned m = 0; m < _mesh_instances.size(); ++m) {
+        lightray.intersect_mesh(_mesh_instances[m]);
       }
 
       if (treenode) {
