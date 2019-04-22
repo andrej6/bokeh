@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 #include <unordered_set>
+#include <algorithm>
 
 #include <cstdlib>
 

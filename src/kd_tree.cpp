@@ -163,8 +163,8 @@ KDTree::KDTree(const Mesh *mesh) : _child1(NULL), _child2(NULL) {
   std::vector<const Face*> faces;
   sorted_data sorted;
 
-  glm::vec3 min(1.0f/0.0f); // Get ourselves some nice infinities up in here...
-  glm::vec3 max(-1.0f/0.0f);
+  glm::vec3 min(HUGE_VALF); // Get ourselves some nice infinities up in here...
+  glm::vec3 max(-HUGE_VALF);
 
   for (Mesh::face_iterator fi = mesh->faces_begin(); fi != mesh->faces_end(); ++fi) {
     for (unsigned v = 0; v < 3; ++v) {

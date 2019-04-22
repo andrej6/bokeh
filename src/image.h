@@ -2,6 +2,7 @@
 #define IMAGE_H_
 
 #include <vector>
+#include <algorithm>
 
 #include <cassert>
 
