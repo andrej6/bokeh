@@ -18,7 +18,7 @@ DebugViz::DebugViz() : _dirty(false), _line_width(1.0) {
 }
 
 DebugViz::~DebugViz() {
-  if (_vao != 0) {
+  if (_vao != 0 && Canvas::gl_inited()) {
     glDeleteBuffers(1, &_vbuf);
     glDeleteBuffers(1, &_vao);
     handle_gl_error("[~DebugViz] Deleting DebugViz vertex buffer");

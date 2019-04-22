@@ -111,6 +111,10 @@ int Canvas::height() {
   return _s_active->_height;
 }
 
+bool Canvas::gl_inited() {
+  return _s_gl_initialized & _GLFW_INITED;
+}
+
 void Canvas::run_with_event_fn(void (*event_fn)()) {
   while (!glfwWindowShouldClose(_s_active->_window) && _s_active->_continue_updates) {
     event_fn();

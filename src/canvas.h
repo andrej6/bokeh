@@ -83,6 +83,8 @@ class Canvas {
     static int width();
     static int height();
 
+    static bool gl_inited();
+
   protected:
     // Get a pointer to this Canvas's GLFW window object.
     GLFWwindow *window() { return _window; }

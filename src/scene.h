@@ -22,6 +22,7 @@ class Scene {
       _shadow_samples = other._shadow_samples;
       _lens_samples = other._lens_samples;
       _ray_bounces = other._ray_bounces;
+      _bg_color = other._bg_color;
     }
 
     Scene &operator=(Scene &&other) {
@@ -34,6 +35,7 @@ class Scene {
       _shadow_samples = other._shadow_samples;
       _lens_samples = other._lens_samples;
       _ray_bounces = other._ray_bounces;
+      _bg_color = other._bg_color;
       return *this;
     }
 

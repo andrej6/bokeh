@@ -396,6 +396,7 @@ Mesh::Mesh(Mesh &&other) {
   _inited_buf = other._inited_buf;
   _vbuf = other._vbuf;
   _vao = other._vao;
+  _kd_tree = std::move(other._kd_tree);
 
   other._inited_buf = false;
   other._vbuf = 0;

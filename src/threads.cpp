@@ -75,7 +75,7 @@ void join_all_threads() {
   }
 
 # ifdef WINDOWS
-  WaitForMultipleObjects(_threads.size(), thread_array, TRUE, INFINITE);
+  WaitForMultipleObjects(_threads.size(), &thread_array, TRUE, INFINITE);
   for (i = 0; i < _threads.size(); ++i) {
     CloseHandle(thread_array[i]);
   }
