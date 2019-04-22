@@ -32,6 +32,7 @@ struct BokehCanvasConf {
   unsigned shadow_samples;
   unsigned antialias_samples;
   unsigned num_bounces;
+  bool progressive;
   std::string scnfile;
 };
 

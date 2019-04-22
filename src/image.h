@@ -42,13 +42,11 @@ class Image {
     void set_pixel_range(unsigned x0, unsigned y0, unsigned width, unsigned height,
         const pixel_color &color)
     {
-      assert(x0 < _w);
-      assert(y0 < _h);
-      assert(x0 + width <= _w);
-      assert(y0 + height <= _h);
-      for (unsigned i = 0; i < width; ++i) {
-        for (unsigned j = 0; j < height; ++j) {
-          _data[index(x0 + i, y0 + j)] = color;
+      unsigned x1 = std::min(x0 + width, _w);
+      unsigned y1 = std::min(y0 + height, _h);
+      for (unsigned i = x0; i < x1; ++i) {
+        for (unsigned j = y0; j < y1; ++j) {
+          _data[index(i, j)] = color;
         }
       }
     }

@@ -21,6 +21,7 @@ static const char *USAGE =
 "  -s<num>     --shadow-samples <num>      Set the number of shadow samples.\n"
 "  -a<num>     --antialias-samples <num>   Set the number of antialias samples.\n"
 "  -d<num>     --ray-depth <num>           Set the maximum raytree depth.\n"
+"  -p          --progressive               Enable progressive rendering.\n"
 "  -h          --help                      Display this text and exit.\n"
 ;
 
@@ -84,9 +85,10 @@ bool parse_short_opt_uint(int argc, char **argv, char name, int *i, unsigned *de
 int main(int argc, char **argv) {
   BokehCanvasConf conf;
   conf.width = conf.height = 200;
-  conf.shadow_samples = 10;
+  conf.shadow_samples = 1;
   conf.antialias_samples = 1;
   conf.num_bounces = 1;
+  conf.progressive = false;
 
   int i = 1;
   while (i < argc) {
@@ -100,7 +102,11 @@ int main(int argc, char **argv) {
       if (parse_long_opt_uint(argc, argv, "shadow-samples", &i, &conf.shadow_samples)) continue;
       if (parse_long_opt_uint(argc, argv, "antialias-samples", &i, &conf.antialias_samples)) continue;
       if (parse_long_opt_uint(argc, argv, "ray-depth", &i, &conf.num_bounces)) continue;
-      if (strcmp(argv[i], "--help") == 0) {
+      if (strcmp(argv[i], "--progressive") == 0) {
+        conf.progressive = true;
+        ++i;
+        continue;
+      } else if (strcmp(argv[i], "--help") == 0) {
         usage(std::cout, 0);
       }
 
@@ -115,7 +121,11 @@ int main(int argc, char **argv) {
       if (parse_short_opt_uint(argc, argv, 's', &i, &conf.shadow_samples)) continue;
       if (parse_short_opt_uint(argc, argv, 'a', &i, &conf.antialias_samples)) continue;
       if (parse_short_opt_uint(argc, argv, 'd', &i, &conf.num_bounces)) continue;
-      if (argv[i][1] == 'h' && argv[i][2] == 0) {
+      if (argv[i][1] == 'p' && argv[i][2] == 0) {
+        conf.progressive = true;
+        ++i;
+        continue;
+      } else if (argv[i][1] == 'h' && argv[i][2] == 0) {
         usage(std::cout, 0);
       }
 

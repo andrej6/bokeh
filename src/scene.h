@@ -19,6 +19,9 @@ class Scene {
       _camera = other._camera;
       other._camera = NULL;
       _draw_kdtree = other._draw_kdtree;
+      _shadow_samples = other._shadow_samples;
+      _lens_samples = other._lens_samples;
+      _ray_bounces = other._ray_bounces;
     }
 
     Scene &operator=(Scene &&other) {
@@ -28,6 +31,9 @@ class Scene {
       _camera = other._camera;
       other._camera = NULL;
       _draw_kdtree = other._draw_kdtree;
+      _shadow_samples = other._shadow_samples;
+      _lens_samples = other._lens_samples;
+      _ray_bounces = other._ray_bounces;
       return *this;
     }
 
@@ -40,6 +46,13 @@ class Scene {
     static Scene from_scn(const char *filename);
 
     const glm::vec3 bg_color() const { return _bg_color; }
+    unsigned shadow_samples() const { return _shadow_samples; }
+    unsigned lens_samples() const { return _lens_samples; }
+    unsigned ray_bounces() const { return _ray_bounces; }
+
+    void set_shadow_samples(unsigned n) { _shadow_samples = n; }
+    void set_lens_samples(unsigned n) { _lens_samples = n; }
+    void set_ray_bounces(unsigned n) { _ray_bounces = n; }
 
     Camera *camera() { return _camera; }
 
@@ -55,7 +68,7 @@ class Scene {
     void draw();
 
   private:
-    Scene() : _camera(NULL) {}
+    Scene() : _camera(NULL), _draw_kdtree(false), _shadow_samples(1), _lens_samples(1), _ray_bounces(1) {}
     glm::vec3 trace_ray(const Ray &ray, RayTreeNode *treenode, int level, int type) const;
 
     std::vector<MeshInstance> _mesh_instances;
@@ -65,6 +78,10 @@ class Scene {
     Camera *_camera;
     glm::vec3 _bg_color;
     bool _draw_kdtree;
+
+    unsigned _shadow_samples;
+    unsigned _lens_samples;
+    unsigned _ray_bounces;
 };
 
 #endif /* SCENE_H_ */

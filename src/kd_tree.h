@@ -67,6 +67,8 @@ class KDTree {
 
     void add_debug_lines(DebugViz &dbviz, const glm::mat4 &modelmat) const;
 
+    bool contains_face(const Face *f) const;
+
   private:
     void copy(const KDTree&);
     void move(KDTree&&);

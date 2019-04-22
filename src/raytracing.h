@@ -52,7 +52,7 @@ class RayHit {
     bool intersect_face(const Face &face, const glm::mat4 &modelmat = glm::mat4(1.0));
     bool intersect_mesh(const MeshInstance &mesh);
 
-    bool intersected() const { return _mesh_instance != NULL; }
+    bool intersected() const { return !std::isnan(_t); }
     glm::vec3 intersection_point() const { return _ray.point_at(_t); }
 
     const Ray &ray() const { return _ray; }
@@ -131,14 +131,20 @@ class RayTree {
 
 class RayTracing {
   public:
-    RayTracing(const Scene *scene)
+    RayTracing(const Scene *scene, bool progressive = true)
       : _scene(scene), _image(Canvas::width(), Canvas::height()),
       _dirty(true), _tex(0), _fbo(0),
-      _trace_x(0), _trace_y(0) {}
+      _trace_x(0), _trace_y(0)
+    {
+      set_progressive(progressive);
+    }
 
-    RayTracing(const Scene *scene, unsigned width, unsigned height) :
+    RayTracing(const Scene *scene, unsigned width, unsigned height, bool progressive = true) :
       _scene(scene), _image(width, height), _dirty(true), _fbo(0),
-      _trace_x(0), _trace_y(0) {}
+      _trace_x(0), _trace_y(0)
+    {
+      set_progressive(progressive);
+    }
 
     void draw();
     bool trace_next_pixel();
@@ -146,6 +152,8 @@ class RayTracing {
     void reset() {
       _image.clear_to_color(pixel_color(0,0,0,1));
       _trace_x = _trace_y = 0;
+      _divs_x = _starting_divs_x;
+      _divs_y = _starting_divs_y;
     }
 
     Image &image() { return _image; }
@@ -153,6 +161,16 @@ class RayTracing {
   private:
     void lazy_init_fbo();
     void pack_data();
+    void set_progressive(bool progressive) {
+      if (progressive) {
+        _starting_divs_y = _divs_y = _image.height() / 20;
+        _starting_divs_x = _divs_x = std::ceil(Canvas::aspect() * _divs_y);
+      } else {
+        _starting_divs_y = _divs_y = _image.height();
+        _starting_divs_x = _divs_x = _image.width();
+      }
+    }
+    bool increase_divs();
 
     const Scene *_scene;
     Image _image;
@@ -162,6 +180,8 @@ class RayTracing {
     GLuint _tex;
     GLuint _fbo;
 
+    unsigned _starting_divs_x, _starting_divs_y;
+    unsigned _divs_x, _divs_y;
     unsigned _trace_x, _trace_y;
 };
 

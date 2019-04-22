@@ -119,22 +119,41 @@ void RayTracing::draw() {
 }
 
 bool RayTracing::trace_next_pixel() {
-  if (_trace_y >= _image.height()) {
-    return false;
+  if (_trace_y >= _divs_y) {
+    if (!increase_divs()) {
+      return false;
+    }
   }
 
-  double center_x = double(_trace_x) + 0.5;
-  double center_y = double(_trace_y) + 0.5;
+  unsigned div_width = ceil((double) _image.width() / _divs_x);
+  unsigned div_height = ceil((double) _image.height() / _divs_y);
 
-  glm::vec3 color = _scene->trace_ray(center_x, center_y, 3);
-  _image.set_pixel(_trace_x, _trace_y, glm::vec4(color.r, color.g, color.b, 1.0));
+  double center_x = ((double) _trace_x + 0.5) * div_width;
+  double center_y = ((double) _trace_y + 0.5) * div_height;
+  unsigned x0 = _trace_x * div_width;
+  unsigned y0 = _trace_y * div_height;
+
+  glm::vec3 color = _scene->trace_ray(center_x, center_y, _scene->ray_bounces());
+  _image.set_pixel_range(x0, y0, div_width, div_height, glm::vec4(color.r, color.g, color.b, 1.0));
   _dirty = true;
 
   ++_trace_x;
-  if (_trace_x >= _image.width()) {
+  if (_trace_x >= _divs_x) {
     _trace_x = 0;
     ++_trace_y;
   }
+
+  return true;
+}
+
+bool RayTracing::increase_divs() {
+  if (_divs_x >= _image.width() && _divs_y >= _image.height()) {
+    return false;
+  }
+
+  _divs_x = std::min(_divs_x*2, _image.width());
+  _divs_y = std::min(_divs_y*2, _image.height());
+  _trace_x = _trace_y = 0;
 
   return true;
 }

@@ -111,7 +111,7 @@ BokehCanvas::BokehCanvas(const BokehCanvasConf &conf)
   : Canvas(conf.width, conf.height, "Bokeh"),
     _scene(Scene::from_scn(conf.scnfile.c_str())),
     _draw_axes(false), _draw_raytracing(false),
-    _raytracing(&_scene, conf.width, conf.height)
+    _raytracing(&_scene, conf.width, conf.height, conf.progressive)
 {
   GLFWwindow *window = this->window();
   glfwSetWindowUserPointer(window, (void*) this);
@@ -123,6 +123,10 @@ BokehCanvas::BokehCanvas(const BokehCanvasConf &conf)
   _dbviz.add_line(glm::vec3(0), glm::vec3(1, 0, 0), glm::vec4(1, 0, 0, 1));
   _dbviz.add_line(glm::vec3(0), glm::vec3(0, 1, 0), glm::vec4(0, 1, 0, 1));
   _dbviz.add_line(glm::vec3(0), glm::vec3(0, 0, 1), glm::vec4(0, 0, 1, 1));
+
+  _scene.set_shadow_samples(conf.shadow_samples);
+  _scene.set_lens_samples(conf.antialias_samples);
+  _scene.set_ray_bounces(conf.num_bounces);
 }
 
 void BokehCanvas::update() {

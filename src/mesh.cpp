@@ -206,6 +206,9 @@ Mesh Mesh::from_obj(std::istream &infile) {
 
   m.compute_vert_norms();
   m._kd_tree = KDTree(&m);
+  for (unsigned i = 0; i < m._faces.size(); ++i) {
+    assert(m._kd_tree.contains_face(m._faces[i]));
+  }
   return m;
 }
 

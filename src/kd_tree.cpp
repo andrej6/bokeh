@@ -24,10 +24,6 @@ static bool ray_plane_intersect(const Ray &ray, int axis, float plane, glm::vec3
     dir_dim = ray.direction().z;
   }
 
-  if (fabs(dir_dim) < EPSILON) {
-    return false;
-  }
-
   float t = (plane - orig_dim) / dir_dim;
   if (t < 0) {
     return false;
@@ -220,6 +216,25 @@ void KDTree::add_debug_lines(DebugViz &dbviz, const glm::mat4 &modelmat) const {
   }
 }
 
+bool KDTree::contains_face(const Face *f) const {
+  CompByAxis comp = { _axis };
+
+  int split = comp.face_split(f, _plane);
+  if (split == SPLIT_LEFT && _child1) {
+    return _child1->contains_face(f);
+  } else if (split == SPLIT_RIGHT && _child2) {
+    return _child2->contains_face(f);
+  } else if (split == SPLIT_NEITHER || (!_child1 && !_child2)) {
+    for (unsigned i = 0; i < _faces.size(); ++i) {
+      if (_faces[i] == f) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 void KDTree::add_intersecting(const Ray &ray, std::unordered_set<const Face*> &set) const {
   if (!_bbox.ray_intersects(ray)) {
     return;
@@ -240,6 +255,9 @@ void KDTree::add_intersecting(const Ray &ray, std::unordered_set<const Face*> &s
 
 void KDTree::construct(const sorted_data &sorted, const BBox &bbox) {
   _bbox = bbox;
+
+  assert(sorted.by_x.size() == sorted.by_y.size());
+  assert(sorted.by_y.size() == sorted.by_z.size());
 
   if (sorted.by_x.size() <= 16) {
     for (unsigned i = 0; i < sorted.by_x.size(); ++i) {

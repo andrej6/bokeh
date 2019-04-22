@@ -7,6 +7,7 @@
 # mesh <name> <file> -- load a mesh and give it a name
 mesh bunny bunny_1k.obj
 mesh square square.obj
+#mesh suzanne suzanne_hires.obj
 
 # materials <MTL file> -- load materials from an MTL file. There can
 # be multiple of these; the names of materials must be unique across all
@@ -26,8 +27,6 @@ bgc 0.6 0.5 0.8
 camera perspective 30.0
 cam_position -5.5406 -5.42681 2.02057
 cam_poi -1.5208 -0.455876 0.388196
-#cam_position 5.0 0.0 0.0
-#cam_poi 0.0 0.0 0.0
 cam_up 0.0 0.0 1.0
 
 # mesh_instance <name>
@@ -65,3 +64,11 @@ scale 2.0 2.0 2.0
 translate -2.2 0.0 -0.125
 rotate 1.0 0.0 0.0    90.0
 rotate+ 0.0 0.0 1.0   90.0
+
+#mesh_instance suzanne
+#mtl GreyDiffuse
+#scale 5 5 5
+#rotate 0 0 1  -90
+#rotate+ 1 0 0   25
+#rotate+ 0 0 1   -35
+#translate 10 15 2.5

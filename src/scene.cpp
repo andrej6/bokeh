@@ -210,9 +210,23 @@ void Scene::draw() {
 glm::vec3 Scene::trace_ray(double x, double y, RayTreeNode *treenode, int bounces) const {
   double center_x = x + 0.5;
   double center_y = y + 0.5;
-  double norm_x = center_x / Canvas::width();
-  double norm_y = center_y / Canvas::height();
-  return trace_ray(_camera->cast_ray(norm_x, norm_y), treenode, bounces + 1, RAY_TYPE_ROOT);
+
+  if (_lens_samples <= 1) {
+    double norm_x = center_x / Canvas::width();
+    double norm_y = center_y / Canvas::height();
+    return trace_ray(_camera->cast_ray(norm_x, norm_y), treenode, bounces + 1, RAY_TYPE_ROOT);
+  }
+
+  glm::vec3 color(0.0);
+
+  for (unsigned i = 0; i < _lens_samples; ++i) {
+    double rand_x = randf() - 0.5, rand_y = randf() - 0.5;
+    double norm_x = (center_x + rand_x) / Canvas::width();
+    double norm_y = (center_y + rand_y) / Canvas::height();
+    color += trace_ray(_camera->cast_ray(norm_x, norm_y), treenode, bounces + 1, RAY_TYPE_ROOT);
+  }
+
+  return color / float(_lens_samples);
 }
 
 glm::vec3 Scene::trace_ray(const Ray &ray, RayTreeNode *treenode, int level, int type) const {
@@ -258,7 +272,7 @@ glm::vec3 Scene::trace_ray(const Ray &ray, RayTreeNode *treenode, int level, int
     glm::mat4 modelmat = mi->modelmat();
     glm::vec3 lightcolor;
 
-    for (unsigned j = 0; j < 10; ++j) {
+    for (unsigned j = 0; j < _shadow_samples; ++j) {
       const Face *f = m->face(randi() % m->faces_size());
       glm::vec3 facepoint = f->random_point_transformed(modelmat);
       glm::vec3 origin(rayhit.intersection_point() + EPSILON*rayhit.norm());
@@ -282,7 +296,7 @@ glm::vec3 Scene::trace_ray(const Ray &ray, RayTreeNode *treenode, int level, int
       lightcolor += mtl->shade(rayhit, lightray);
     }
 
-    color += lightcolor / 10.0f;
+    color += lightcolor / float(_shadow_samples);
   }
 
   if (mtl->reflect_on()) {
@@ -303,5 +317,5 @@ glm::vec3 Scene::trace_ray(const Ray &ray, RayTreeNode *treenode, int level, int
 
 void Scene::visualize_raytree(double x, double y) {
   _raytree.clear();
-  trace_ray(x, y, &_raytree.root(), 3);
+  trace_ray(x, y, &_raytree.root(), _ray_bounces);
 }
