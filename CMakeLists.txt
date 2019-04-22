@@ -17,6 +17,7 @@ foreach(basename
     raytracing.cpp
     scene.cpp
     shader_store.cpp
+    threads.cpp
     util.cpp
     )
   set(SRCS ${SRCS} "${CMAKE_CURRENT_SOURCE_DIR}/src/${basename}")
@@ -57,12 +58,14 @@ if (UNIX)
     PROPERTIES
     COMPILE_FLAGS "-g -Wall -pedantic"
     )
-  target_link_libraries(bokeh m)
+  target_link_libraries(bokeh m pthread)
+  add_definitions(-DUNIX)
 elseif(MSVC)
   set_target_properties(bokeh
     PROPERTIES
     COMPILE_FLAGS "/Wall /W4"
     )
+  add_definitions(-DWINDOWS)
 endif()
 
 add_definitions(-DGLM_FORCE_RADIANS -DGLM_FORCE_CTOR_INIT -DGLM_FORCE_INTRINSICS)
