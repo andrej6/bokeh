@@ -61,7 +61,7 @@ void join_thread(thread_id tid) {
 
 void join_all_threads() {
 # ifdef WINDOWS
-  thread_t thread_array = new thread_t[_threads.size()];
+  thread_t *thread_array = new thread_t[_threads.size()];
   unsigned i = 0;
 # endif
 
@@ -69,13 +69,13 @@ void join_all_threads() {
 #   ifdef UNIX
     pthread_join(itr->second, NULL);
 #   else
-    thread_array[i] = itr->second;
+    thread_array[i];
     ++i;
 #   endif
   }
 
 # ifdef WINDOWS
-  WaitForMultipleObjects(_threads.size(), &thread_array, TRUE, INFINITE);
+  WaitForMultipleObjects(_threads.size(), thread_array, TRUE, INFINITE);
   for (i = 0; i < _threads.size(); ++i) {
     CloseHandle(thread_array[i]);
   }
