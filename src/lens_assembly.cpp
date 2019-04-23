@@ -17,7 +17,7 @@ LensAssembly *LensAssembly::from_la(const char *filename) {
   std::string line;
 
   float z = 0.0;
-  glm::vec3 c(0, 0, 0);
+  float c = 0.0;
   float r, t, n, a;
 
   while (std::getline(scnfile, line)) {
@@ -47,13 +47,15 @@ LensAssembly *LensAssembly::from_la(const char *filename) {
       n = parse_float(tokens, 3);
       a = parse_float(tokens, 4);
 
-      c.x = z + r;
+      c = z + r;
       z -= t;
 
-      lens_assembly->add_surface(LensSurface(c, abs(r), n, a / 2.0));
+      lens_assembly->add_surface(LensSurface(c, r, n, a / 2.0));
 
     }
   }
+
+  return lens_assembly;
 }
 
 void LensAssembly::find_pupil() {
@@ -119,4 +121,35 @@ Ray LensAssembly::generate_ray(float x, float y) const {
   glm::vec3 pupil_pt(r*cos(theta), r*sin(theta), _exit_pupil_pos);
 
   RayHit rayhit(origin, pupil_pt - origin);
+  float index_a = 1.0;
+
+  for (unsigned i = 0; i < _surfaces.size(); ++i) {
+    glm::vec3 center(0.0, 0.0, _surfaces[i].center());
+
+    if (fabs(_surfaces[i].radius_of_curvature()) < EPSILON) {
+      assert(rayhit.intersect_plane(glm::vec3(0.0, 0.0, 1.0), center));
+    } else {
+      assert(rayhit.intersect_sphere(center, fabs(_surfaces[i].radius_of_curvature())));
+    }
+
+    float index_b = _surfaces[i].index_of_refraction();
+    glm::vec3 new_origin = rayhit.intersection_point();
+    glm::vec3 n = rayhit.norm();
+    if (_surfaces[i].radius_of_curvature() > 0.0) {
+      n = -n;
+    }
+
+    float costheta = glm::dot(rayhit.ray().direction(), n);
+    float r = index_a / index_b;
+    float det = 1.0 - r*r*(1.0 - costheta*costheta);
+
+    glm::vec3 new_dir = r * rayhit.ray().direction() + float(r*costheta - sqrt(det)) * n;
+
+    rayhit = RayHit(new_origin, new_dir);
+  }
+
+  origin = rayhit.ray().origin();
+  glm::vec3 direction(rayhit.ray().direction());
+
+  return Ray(glm::vec3(origin.x, origin.y, 0.0), direction);
 }

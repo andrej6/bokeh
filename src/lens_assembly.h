@@ -16,6 +16,7 @@ class LensAssembly {
 
 public:
   // CONSTRUCTOR & DESTRUCTOR
+  LensAssembly() : _dist(0.0), _exit_pupil_pos(0.0), _exit_pupil_rad(0.0) {}
   LensAssembly(float d, const std::vector<LensSurface> &surfaces = std::vector<LensSurface>()) :
     _surfaces(surfaces)
   {
@@ -25,7 +26,7 @@ public:
 
   static LensAssembly *from_la(const char *filename);
 
-  void set_dist(float d) { dist = d; }
+  void set_dist(float d) { _dist = d; }
   void add_surface(const LensSurface &surf) {
     _surfaces.push_back(surf);
     find_pupil();

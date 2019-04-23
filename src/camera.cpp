@@ -151,5 +151,24 @@ void LensCamera::add_surface(const LensSurface &ls) {
 }
 
 Ray LensCamera::cast_ray(double x, double y) const {
-  return PerspectiveCamera::cast_ray(x, y); // TODO
+  float film_height = 35.0;
+  float film_width = film_height * Canvas::aspect();
+
+  float lens_x = (x - 0.5) * film_width;
+  float lens_y = (y - 0.5) * film_height;
+
+  Ray unmodded(_lens_assembly->generate_ray(lens_x, lens_y));
+
+  glm::mat4 inverse_view;
+  glm::mat4 proj_unused;
+  get_view_projection(inverse_view, proj_unused);
+  inverse_view = glm::inverse(inverse_view);
+
+  glm::vec3 unmod_origin = unmodded.origin();
+  glm::vec3 scaled_origin(unmod_origin.x / film_width, unmod_origin.y / film_height, 0.0);
+
+  glm::vec3 origin = apply_homog(inverse_view, scaled_origin, VEC3_POINT);
+  glm::vec3 direction = apply_homog(inverse_view, unmodded.direction(), VEC3_DIR);
+
+  return Ray(origin, direction);
 }

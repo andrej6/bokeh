@@ -55,7 +55,54 @@ bool RayHit::intersect_mesh(const MeshInstance &mesh) {
 }
 
 bool RayHit::intersect_sphere(const glm::vec3 &center, float radius) {
+  glm::vec3 translated_origin(_ray.origin() - center);
+  float a = glm::dot(_ray.direction(), _ray.direction());
+  float b = 2.0 * glm::dot(translated_origin, _ray.direction());
+  float c = glm::dot(translated_origin, translated_origin) - radius*radius;
 
+  float d2 = b*b - 4*a*c;
+  if (d2 < 0.0) {
+    return false;
+  }
+
+  float d = sqrt(d2);
+
+  float t1 = (-b + d) / (2*a);
+  float t2 = (-b - d) / (2*a);
+
+  bool success = false;
+
+  if (t1 >= 0.0 && (!intersected() || t1 < _t)) {
+    _t = t1;
+    success = true;
+  }
+
+  if (t2 >= 0.0 && (!intersected() || t2 < _t)) {
+    _t = t2;
+    success = true;
+  }
+
+  if (success) {
+    _norm = glm::normalize(intersection_point() - center);
+  }
+
+  return success;
+}
+
+bool RayHit::intersect_plane(const glm::vec3 &normal, const glm::vec3 &s) {
+  float t = (glm::dot(normal, s) - glm::dot(normal, _ray.origin())) / glm::dot(normal, _ray.direction());
+
+  if (std::isnan(t) || std::isinf(t) || t < 0.0) {
+    return false;
+  }
+
+  if (intersected() && t >= _t) {
+    return false;
+  }
+
+  _norm = normal;
+  _t = t;
+  return true;
 }
 
 const Material *RayHit::material() const {
