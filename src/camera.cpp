@@ -151,7 +151,7 @@ Ray LensCamera::cast_ray(double x, double y) const {
   float film_width = film_height * Canvas::aspect();
 
   float lens_x = (x - 0.5) * film_width;
-  float lens_y = (y - 0.5) * film_height;
+  float lens_y = (0.5 - y) * film_height;
 
   Ray unmodded(_lens_assembly->generate_ray(lens_x, lens_y));
 

@@ -56,19 +56,18 @@ bool RayHit::intersect_mesh(const MeshInstance &mesh) {
 
 bool RayHit::intersect_sphere(const glm::vec3 &center, float radius) {
   glm::vec3 translated_origin(_ray.origin() - center);
-  float a = glm::dot(_ray.direction(), _ray.direction());
   float b = 2.0 * glm::dot(translated_origin, _ray.direction());
   float c = glm::dot(translated_origin, translated_origin) - radius*radius;
 
-  float d2 = b*b - 4*a*c;
+  float d2 = b*b - 4*c;
   if (d2 < 0.0) {
     return false;
   }
 
   float d = sqrt(d2);
 
-  float t1 = (-b + d) / (2*a);
-  float t2 = (-b - d) / (2*a);
+  float t1 = (-b + d) / 2.0;
+  float t2 = (-b - d) / 2.0;
 
   bool success = false;
 

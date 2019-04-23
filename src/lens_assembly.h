@@ -17,14 +17,14 @@ class LensAssembly {
 public:
   // CONSTRUCTOR & DESTRUCTOR
   LensAssembly() : _dist(0.0), _exit_pupil_pos(0.0), _exit_pupil_rad(0.0) {}
-  LensAssembly(float d, const std::vector<LensSurface> &surfaces = std::vector<LensSurface>()) :
-    _surfaces(surfaces)
+  LensAssembly(float d, std::vector<LensSurface> &&surfaces = std::vector<LensSurface>()) :
+    _surfaces(std::move(surfaces))
   {
     _dist = d;
     find_pupil();
   }
 
-  static LensAssembly *from_la(const char *filename);
+  static LensAssembly from_la(const char *filename);
 
   void set_dist(float d) { _dist = d; }
   void set_surfaces(std::vector<LensSurface> surfaces) {

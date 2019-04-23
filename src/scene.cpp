@@ -72,7 +72,7 @@ Scene Scene::from_scn(const char *filename) {
         c->set_angle(size_angle);
         scene._camera = c;
       } else if (tokens[1] == "lens") {
-        LensAssembly *la = LensAssembly::from_la(concat_path(dirs, tokens[3]).c_str());
+        LensAssembly *la = new LensAssembly(LensAssembly::from_la(concat_path(dirs, tokens[3]).c_str()));
         LensCamera *c = new LensCamera;
         c->set_angle(size_angle);
         c->set_lens_assembly(la);
