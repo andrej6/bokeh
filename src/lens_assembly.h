@@ -11,11 +11,12 @@
 class LensAssembly {
 
 public:
-  // CONSTRUCTOR & DESTRUCTOR
-  LensAssembly(float d) {
-    dist = d;
-  }
+  // CONSTRUCTOR
+  LensAssembly(float d = 100) : dist(d) {}
 
+  static LensAssembly *from_la(const char *filename);
+
+  void set_dist(float d) { dist = d; }
   void add_surface(const LensSurface &surf) {
     surfaces.push_back(surf);
   }

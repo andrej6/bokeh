@@ -22,7 +22,7 @@ private:
   // REPRESENTATION
   glm::vec3 c;
   float r;
-  float a;
+  float a; // radius of the aperture
   float ior;
 
 };

@@ -10,6 +10,8 @@
 
 #include "canvas.h"
 #include "raytracing.h"
+#include "lens_assembly.h"
+#include "lens_surface.h"
 #include "util.h"
 
 // A top-level, pure virtual class representing a camera (viewpoint) in a 3D
@@ -121,14 +123,33 @@ class PerspectiveCamera : public Camera {
         const glm::vec3 &poi = glm::vec3(0,0,0),
         const glm::vec3 &up = glm::vec3(0,1,0),
         float fov = 45);
+    virtual ~PerspectiveCamera() {}
 
     void set_angle(float fov) { _angle = fov; }
     void zoom(float dist);
     void get_view_projection(glm::mat4 &view, glm::mat4 &projection) const;
-    Ray cast_ray(double x, double y) const;
+    virtual Ray cast_ray(double x, double y) const;
 
   private:
     float _angle;
+};
+
+// A persective camera with a lens assembly.
+class LensCamera : public PerspectiveCamera {
+  public:
+    LensCamera(const glm::vec3 &pos = glm::vec3(0, 0, 1),
+      const glm::vec3 &poi = glm::vec3(0, 0, 0),
+      const glm::vec3 &up = glm::vec3(0, 1, 0),
+      float fov = 45,
+      LensAssembly *la = NULL);
+    ~LensCamera() { delete _lens_assembly; }
+
+    void set_lens_assembly(LensAssembly *la) { delete _lens_assembly; _lens_assembly = la; }
+    void add_surface(const LensSurface &ls);
+    Ray cast_ray(double x, double y) const;
+
+  private:
+    LensAssembly *_lens_assembly;
 };
 
 #endif /* CAMERA_H_ */

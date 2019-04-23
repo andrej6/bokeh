@@ -52,7 +52,7 @@ Scene Scene::from_scn(const char *filename) {
         exit(-1);
       }
     } else if (tokens[0] == "camera") {
-      if (tokens.size() != 3) {
+      if (tokens.size() > 4 || tokens.size() < 3) {
         glerr() << "ERROR: incorrect number of parameters for camera specification in SCN" << std::endl;
         exit(-1);
       }
@@ -70,6 +70,12 @@ Scene Scene::from_scn(const char *filename) {
       } else if (tokens[1] == "perspective") {
         PerspectiveCamera *c = new PerspectiveCamera;
         c->set_angle(size_angle);
+        scene._camera = c;
+      } else if (tokens[1] == "lens") {
+        LensAssembly *la = LensAssembly::from_la(concat_path(dirs, tokens[3]).c_str());
+        LensCamera *c = new LensCamera;
+        c->set_angle(size_angle);
+        c->set_lens_assembly(la);
         scene._camera = c;
       }
     } else if (tokens[0] == "cam_position") {
@@ -104,7 +110,7 @@ Scene Scene::from_scn(const char *filename) {
       if (tokens.size() > 4) {
         glerr() << "ERROR: too many parameters to cam_up" << std::endl;
       }
-    } else if (tokens[0] == "mesh_instance") {
+    }  else if (tokens[0] == "mesh_instance") {
       if (tokens.size() != 2) {
         glerr() << "ERROR: incorrect number of parameters for mesh_instance" << std::endl;
         exit(-1);

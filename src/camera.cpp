@@ -137,3 +137,19 @@ Ray PerspectiveCamera::cast_ray(double x, double y) const {
   glm::vec3 dir = point - position();
   return Ray(point, dir);
 }
+
+LensCamera::LensCamera(
+    const glm::vec3 &pos,
+    const glm::vec3 &poi,
+    const glm::vec3 &up,
+    float angle,
+    LensAssembly *la) :
+  PerspectiveCamera(pos, poi, up, angle), _lens_assembly(la) {}
+
+void LensCamera::add_surface(const LensSurface &ls) {
+  _lens_assembly->add_surface(ls);
+}
+
+Ray LensCamera::cast_ray(double x, double y) const {
+  return PerspectiveCamera::cast_ray(x, y); // TODO
+}
