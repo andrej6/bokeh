@@ -11,6 +11,7 @@ foreach(basename
     cmj_sampler.cpp
     debug_viz.cpp
     kd_tree.cpp
+    lens_assembly.cpp
     main.cpp
     mesh.cpp
     material.cpp

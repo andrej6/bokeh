@@ -51,6 +51,7 @@ class RayHit {
 
     bool intersect_face(const Face &face, const glm::mat4 &modelmat = glm::mat4(1.0));
     bool intersect_mesh(const MeshInstance &mesh);
+    bool intersect_sphere(const glm::vec3 &center, float radius);
 
     bool intersected() const { return !std::isnan(_t); }
     glm::vec3 intersection_point() const { return _ray.point_at(_t); }

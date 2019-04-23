@@ -54,6 +54,10 @@ bool RayHit::intersect_mesh(const MeshInstance &mesh) {
   return intersected;
 }
 
+bool RayHit::intersect_sphere(const glm::vec3 &center, float radius) {
+
+}
+
 const Material *RayHit::material() const {
   if (_mtl_id == Material::NONE) {
     return NULL;
