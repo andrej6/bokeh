@@ -146,10 +146,6 @@ LensCamera::LensCamera(
     LensAssembly *la) :
   PerspectiveCamera(pos, poi, up, angle), _lens_assembly(la) {}
 
-void LensCamera::add_surface(const LensSurface &ls) {
-  _lens_assembly->add_surface(ls);
-}
-
 Ray LensCamera::cast_ray(double x, double y) const {
   float film_height = 35.0;
   float film_width = film_height * Canvas::aspect();

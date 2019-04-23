@@ -145,7 +145,6 @@ class LensCamera : public PerspectiveCamera {
     ~LensCamera() { delete _lens_assembly; }
 
     void set_lens_assembly(LensAssembly *la) { delete _lens_assembly; _lens_assembly = la; }
-    void add_surface(const LensSurface &ls);
     Ray cast_ray(double x, double y) const;
 
   private:

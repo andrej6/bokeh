@@ -20,6 +20,8 @@ LensAssembly *LensAssembly::from_la(const char *filename) {
   float c = 0.0;
   float r, t, n, a;
 
+std::vector<LensSurface> surfaces;
+
   while (std::getline(scnfile, line)) {
     line = strip(line);
     if (line.empty() || line[0] == '#') {
@@ -50,10 +52,11 @@ LensAssembly *LensAssembly::from_la(const char *filename) {
       c = z + r;
       z -= t;
 
-      lens_assembly->add_surface(LensSurface(c, r, n, a / 2.0));
-
+      surfaces.push_back(LensSurface(c, r, n, a / 2.0));
     }
   }
+
+  lens_assembly->set_surfaces(surfaces);
 
   return lens_assembly;
 }
@@ -127,9 +130,16 @@ Ray LensAssembly::generate_ray(float x, float y) const {
     glm::vec3 center(0.0, 0.0, _surfaces[i].center());
 
     if (fabs(_surfaces[i].radius_of_curvature()) < EPSILON) {
-      assert(rayhit.intersect_plane(glm::vec3(0.0, 0.0, 1.0), center));
+      //assert(rayhit.intersect_plane(glm::vec3(0.0, 0.0, 1.0), center));
+      if (! rayhit.intersect_plane(glm::vec3(0.0, 0.0, 1.0), center)) {
+        return generate_ray(x, y);
+      }
     } else {
-      assert(rayhit.intersect_sphere(center, fabs(_surfaces[i].radius_of_curvature())));
+      //assert(rayhit.intersect_sphere(center, fabs(_surfaces[i].radius_of_curvature())));
+      if (!rayhit.intersect_sphere(center, fabs(_surfaces[i].radius_of_curvature()))) {
+        // Ray didn't make it through the lenses
+        return generate_ray(x, y);
+      }
     }
 
     float index_b = _surfaces[i].index_of_refraction();

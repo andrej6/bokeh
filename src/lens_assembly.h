@@ -27,8 +27,8 @@ public:
   static LensAssembly *from_la(const char *filename);
 
   void set_dist(float d) { _dist = d; }
-  void add_surface(const LensSurface &surf) {
-    _surfaces.push_back(surf);
+  void set_surfaces(std::vector<LensSurface> surfaces) {
+    _surfaces = surfaces;
     find_pupil();
   }
 

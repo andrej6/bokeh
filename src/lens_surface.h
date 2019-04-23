@@ -41,7 +41,7 @@ public:
   float rear_focal_length(float incoming_index) const {
     return ior * effective_focal_length(incoming_index);
   }
-  float vertex_position() const { return c + r; }
+  float vertex_position() const { return c - r; }
 
   float paraxial_refract(float in_angle, float height, float index) const {
     return (ior*in_angle - height*optical_power(index)) / index;
