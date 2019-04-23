@@ -4,7 +4,7 @@
 #   lens_surface <radius> <thickness> <index of refraction> <aperture diameter>
 # All distances specfied in mm
 
-lens_assembly 100
+lens_assembly 150
 lens_surface -204.96 17 1.744 52
 lens_surface 123.5 1 1 52
 lens_surface -51.5 23 1.744 52

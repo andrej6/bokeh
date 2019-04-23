@@ -7,20 +7,20 @@
 
 #include "util.h"
 
-LensAssembly *LensAssembly::from_la(const char *filename) {
+LensAssembly LensAssembly::from_la(const char *filename) {
   std::string dirs = dirname(filename);
 
   std::ifstream scnfile(filename);
   assert(scnfile.good());
 
-  LensAssembly *lens_assembly = new LensAssembly();
   std::string line;
 
   float z = 0.0;
   float c = 0.0;
   float r, t, n, a;
+  float dist;
 
-std::vector<LensSurface> surfaces;
+  std::vector<LensSurface> surfaces;
 
   while (std::getline(scnfile, line)) {
     line = strip(line);
@@ -36,7 +36,7 @@ std::vector<LensSurface> surfaces;
         exit(-1);
       }
 
-      lens_assembly->set_dist(parse_float(tokens, 1));
+      dist = parse_float(tokens, 1);
 
     } else if (tokens[0] == "lens_surface") { // ======== LENS SURFACE ==================
       if (tokens.size() != 5) {
@@ -56,9 +56,7 @@ std::vector<LensSurface> surfaces;
     }
   }
 
-  lens_assembly->set_surfaces(surfaces);
-
-  return lens_assembly;
+  return LensAssembly(dist, std::move(surfaces));
 }
 
 void LensAssembly::find_pupil() {
@@ -73,13 +71,19 @@ void LensAssembly::find_pupil() {
   float marginal_angle;
   float marginal_height;
 
-  float index = 1.0;
+  float index;
+  if (_surfaces.size() > 1) {
+    index = _surfaces[_surfaces.size() - 2].index_of_refraction();
+  } else {
+    index = 1.0;
+  }
   float height = 0.1;
   float angle = 0.1;
 
   // Find the aperture stop surface
-  for (unsigned i = _surfaces.size() - 1; i > 0; --i) {
-    angle = _surfaces[i].paraxial_refract(angle, height, index);
+  for (unsigned _i = 0; _i < _surfaces.size(); ++_i) {
+    unsigned i = _surfaces.size() - _i - 1;
+    angle = _surfaces[i].paraxial_refract_rev(angle, height, index);
 
     float ratio = fabs(height / _surfaces[i].aperture_radius());
     if (ratio > max_ratio) {
@@ -89,7 +93,12 @@ void LensAssembly::find_pupil() {
       marginal_height = height / ratio;
     }
 
-    float dist = _surfaces[i-1].vertex_position() - _surfaces[i].vertex_position();
+    float dist;
+    if (i > 0) {
+      dist = _surfaces[i-1].vertex_position() - _surfaces[i].vertex_position();
+    } else {
+      dist = 0.0;
+    }
     height = height + angle*dist;
     index = _surfaces[i].index_of_refraction();
   }
@@ -104,12 +113,16 @@ void LensAssembly::find_pupil() {
 
     float dist = _surfaces[i].vertex_position() - _surfaces[i+1].vertex_position();
     height = height + angle*dist;
-    angle = _surfaces[i].paraxial_refract(angle, height, index);
+    angle = _surfaces[i].paraxial_refract_rev(angle, height, index);
 
     marginal_height = marginal_height + marginal_angle*dist;
-    marginal_angle = _surfaces[i].paraxial_refract(marginal_angle, height, index);
+    marginal_angle = _surfaces[i].paraxial_refract_rev(marginal_angle, height, index);
 
-    index = _surfaces[i].index_of_refraction();
+    if (i > 0) {
+      index = _surfaces[i-1].index_of_refraction();
+    } else {
+      index = 1.0;
+    }
   }
 
   float dz = -height / angle;
@@ -123,19 +136,22 @@ Ray LensAssembly::generate_ray(float x, float y) const {
   float theta = 2*PI*randf(), r = sqrt(randf())*_exit_pupil_rad;
   glm::vec3 pupil_pt(r*cos(theta), r*sin(theta), _exit_pupil_pos);
 
-  RayHit rayhit(origin, pupil_pt - origin);
+  glm::vec3 direction = pupil_pt - origin;
+  if (direction.z > 0) {
+    direction = -direction;
+  }
+
+  RayHit rayhit(origin, direction);
   float index_a = 1.0;
 
   for (unsigned i = 0; i < _surfaces.size(); ++i) {
     glm::vec3 center(0.0, 0.0, _surfaces[i].center());
 
     if (fabs(_surfaces[i].radius_of_curvature()) < EPSILON) {
-      //assert(rayhit.intersect_plane(glm::vec3(0.0, 0.0, 1.0), center));
       if (! rayhit.intersect_plane(glm::vec3(0.0, 0.0, 1.0), center)) {
         return generate_ray(x, y);
       }
     } else {
-      //assert(rayhit.intersect_sphere(center, fabs(_surfaces[i].radius_of_curvature())));
       if (!rayhit.intersect_sphere(center, fabs(_surfaces[i].radius_of_curvature()))) {
         // Ray didn't make it through the lenses
         return generate_ray(x, y);
@@ -149,17 +165,21 @@ Ray LensAssembly::generate_ray(float x, float y) const {
       n = -n;
     }
 
-    float costheta = glm::dot(rayhit.ray().direction(), n);
-    float r = index_a / index_b;
-    float det = 1.0 - r*r*(1.0 - costheta*costheta);
+    float costheta = glm::dot(n, -rayhit.ray().direction());
+    float sintheta = glm::length(glm::cross(n, -rayhit.ray().direction()));
+    float sinthetap = (index_a / index_b) * sintheta;
+    float costhetap = sqrt(1 - sinthetap*sinthetap);
+    glm::vec3 m = glm::normalize((rayhit.ray().direction() - n*costheta) / sintheta);
 
-    glm::vec3 new_dir = r * rayhit.ray().direction() + float(r*costheta - sqrt(det)) * n;
+    glm::vec3 new_dir = -n*costhetap - m*sinthetap;
 
     rayhit = RayHit(new_origin, new_dir);
+
+    index_a = index_b;
   }
 
   origin = rayhit.ray().origin();
-  glm::vec3 direction(rayhit.ray().direction());
+  direction = rayhit.ray().direction();
 
   return Ray(glm::vec3(origin.x, origin.y, 0.0), direction);
 }
