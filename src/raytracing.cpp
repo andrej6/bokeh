@@ -131,14 +131,42 @@ void RayTreeNode::add_child(const RayHit &hit, const glm::vec3 &color) {
   _tree->_dbviz.add_line(hit.ray().origin(), end_point, start_color, end_color);
 }
 
-RayTreeNode::~RayTreeNode() {
+void RayTreeNode::destroy() {
   for (unsigned i = 0; i < _children.size(); ++i) {
     delete _children[i];
   }
 }
 
-RayTree::RayTree(RayTree &&other) : _root(other._root), _dbviz(other._dbviz) {
+void RayTreeNode::copy(const RayTreeNode &other) {
+  _ray = other._ray;
+  _color = other._color;
+
+  for (unsigned i = 0; i < other._children.size(); ++i) {
+    _children.push_back(new RayTreeNode(*other._children[i]));
+  }
+
+  _tree = other._tree;
+}
+
+void RayTreeNode::move(RayTreeNode &&other) {
+  _ray = std::move(other._ray);
+  _color = other._color;
+  _children = std::move(other._children);
+  _tree = other._tree;
+}
+
+RayTree::RayTree(RayTree &&other) : _root(std::move(other._root)), _dbviz(std::move(other._dbviz)) {
   fix_tree_pointers(&_root);
+}
+
+void RayTree::destroy() {
+  _root.destroy();
+  _dbviz.clear();
+}
+
+void RayTree::move(RayTree &&other) {
+  _root = std::move(other._root);
+  _dbviz = std::move(other._dbviz);
 }
 
 void RayTree::fix_tree_pointers(RayTreeNode *node) {

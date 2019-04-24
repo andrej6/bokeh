@@ -92,11 +92,14 @@ class RayTreeNode {
   private:
     RayTreeNode(RayTree *tree) : _ray(glm::vec3(0.0), glm::vec3(0.0)), _color(0.0), _tree(tree) {}
     RayTreeNode(const RayTreeNode&) = default;
-    RayTreeNode(RayTreeNode&&) = default;
-    RayTreeNode &operator=(const RayTreeNode&) = default;
-    RayTreeNode &operator=(RayTreeNode&&) = default;
+    RayTreeNode(RayTreeNode &&other) : _ray(std::move(other._ray)) { move(std::move(other)); }
+    RayTreeNode &operator=(const RayTreeNode &other) { destroy(); copy(other); return *this; }
+    RayTreeNode &operator=(RayTreeNode &&other) { destroy(); move(std::move(other)); return *this; }
 
-    ~RayTreeNode();
+    ~RayTreeNode() { destroy(); }
+    void destroy();
+    void copy(const RayTreeNode&);
+    void move(RayTreeNode&&);
 
     RayTreeNode(const RayHit &ray, const glm::vec3 color) : _ray(ray), _color(color) {}
 
@@ -112,10 +115,10 @@ class RayTree {
   public:
     RayTree() : _root(this) {}
     RayTree(const RayTree&) = delete;
-    RayTree(RayTree&&);
+    RayTree(RayTree &&other);
 
     RayTree &operator=(const RayTree&) = delete;
-    RayTree &operator=(RayTree&&) = default;
+    RayTree &operator=(RayTree &&other) { destroy(); move(std::move(other)); return *this; }
 
     RayTreeNode &root() { return _root; }
 
@@ -128,6 +131,9 @@ class RayTree {
     void fix_tree_pointers(RayTreeNode *node);
     RayTreeNode _root;
     DebugViz _dbviz;
+
+    void destroy();
+    void move(RayTree&&);
 
     friend class RayTreeNode;
 };
