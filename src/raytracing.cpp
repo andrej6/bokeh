@@ -167,6 +167,7 @@ void RayTree::destroy() {
 void RayTree::move(RayTree &&other) {
   _root = std::move(other._root);
   _dbviz = std::move(other._dbviz);
+  fix_tree_pointers(&_root);
 }
 
 void RayTree::fix_tree_pointers(RayTreeNode *node) {
