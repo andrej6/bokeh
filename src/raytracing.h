@@ -112,7 +112,7 @@ class RayTree {
   public:
     RayTree() : _root(this) {}
     RayTree(const RayTree&) = delete;
-    RayTree(RayTree&&) = default;
+    RayTree(RayTree&&);
 
     RayTree &operator=(const RayTree&) = delete;
     RayTree &operator=(RayTree&&) = default;
@@ -125,6 +125,7 @@ class RayTree {
     void clear();
 
   private:
+    void fix_tree_pointers(RayTreeNode *node);
     RayTreeNode _root;
     DebugViz _dbviz;
 

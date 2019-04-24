@@ -136,7 +136,7 @@ Ray LensAssembly::generate_ray(float x, float y) const {
   float theta = 2*PI*randf(), r = sqrt(randf())*_exit_pupil_rad;
   glm::vec3 pupil_pt(r*cos(theta), r*sin(theta), _exit_pupil_pos);
 
-  glm::vec3 direction = pupil_pt - origin;
+  glm::vec3 direction = glm::normalize(pupil_pt - origin);
   if (direction.z > 0) {
     direction = -direction;
   }

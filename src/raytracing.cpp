@@ -137,6 +137,17 @@ RayTreeNode::~RayTreeNode() {
   }
 }
 
+RayTree::RayTree(RayTree &&other) : _root(other._root), _dbviz(other._dbviz) {
+  fix_tree_pointers(&_root);
+}
+
+void RayTree::fix_tree_pointers(RayTreeNode *node) {
+  node->_tree = this;
+  for (unsigned i = 0; i < node->_children.size(); ++i) {
+    fix_tree_pointers(node->_children[i]);
+  }
+}
+
 void RayTree::clear() {
   for (unsigned i = 0; i < _root._children.size(); ++i) {
     delete _root._children[i];
