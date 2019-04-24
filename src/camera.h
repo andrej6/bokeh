@@ -11,7 +11,6 @@
 #include "canvas.h"
 #include "raytracing.h"
 #include "lens_assembly.h"
-#include "lens_surface.h"
 #include "util.h"
 
 // A top-level, pure virtual class representing a camera (viewpoint) in a 3D
