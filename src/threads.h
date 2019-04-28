@@ -21,6 +21,7 @@ typedef uint32_t thread_id;
 thread_id create_thread(thread_func func, void *arg);
 void join_thread(thread_id thread);
 void join_all_threads();
+bool try_join_thread(thread_id thread);
 
 mutex_t create_mutex();
 bool lock_mutex(mutex_t mutex);

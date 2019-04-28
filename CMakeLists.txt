@@ -4,6 +4,9 @@ project(bokeh)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "C:\\GraphicsLibraries")
 
+include(ProcessorCount)
+ProcessorCount(PROCESSOR_COUNT)
+
 foreach(basename
     bokeh_canvas.cpp
     camera.cpp
@@ -69,6 +72,7 @@ elseif(MSVC)
   add_definitions(-DWINDOWS)
 endif()
 
-add_definitions(-DGLM_FORCE_RADIANS -DGLM_FORCE_CTOR_INIT -DGLM_FORCE_INTRINSICS)
+add_definitions(-DGLM_FORCE_RADIANS -DGLM_FORCE_CTOR_INIT -DGLM_FORCE_INTRINSICS
+  -DPROCESSOR_COUNT=${PROCESSOR_COUNT})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")

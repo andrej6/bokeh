@@ -85,12 +85,20 @@ void bokeh_keyboardcb(GLFWwindow *window, int key, int scancode, int action, int
 
       case GLFW_KEY_Q:
       case GLFW_KEY_ESCAPE:
+        if (!canvas->_progressive_raytracing) {
+          canvas->_raytracing.stop_threaded_raytrace();
+        }
         glfwSetWindowShouldClose(canvas->window(), GLFW_TRUE);
         break;
 
       case GLFW_KEY_R:
         if (canvas->_draw_raytracing) {
+          if (!canvas->_progressive_raytracing) {
+            canvas->_raytracing.stop_threaded_raytrace();
+          }
           canvas->_raytracing.reset();
+        } else if (!canvas->_progressive_raytracing) {
+          canvas->_raytracing.start_threaded_raytrace();
         }
 
         canvas->_draw_raytracing = !canvas->_draw_raytracing;
@@ -110,8 +118,8 @@ void bokeh_keyboardcb(GLFWwindow *window, int key, int scancode, int action, int
 BokehCanvas::BokehCanvas(const BokehCanvasConf &conf)
   : Canvas(conf.width, conf.height, "Bokeh"),
     _scene(Scene::from_scn(conf.scnfile.c_str())),
-    _draw_axes(false), _draw_raytracing(false),
-    _raytracing(&_scene, conf.width, conf.height, conf.progressive)
+    _draw_axes(false), _draw_raytracing(false), _progressive_raytracing(conf.progressive),
+    _raytracing(&_scene, conf.width, conf.height)
 {
   GLFWwindow *window = this->window();
   glfwSetWindowUserPointer(window, (void*) this);
@@ -136,7 +144,9 @@ void BokehCanvas::update() {
 
   if (_draw_raytracing) {
     time_t start = time(NULL);
-    while (time(NULL) - start < 1 && _raytracing.trace_next_pixel()) {}
+    if (_progressive_raytracing) {
+      while (time(NULL) - start < 1 && _raytracing.trace_next_pixel()) {}
+    }
     _raytracing.draw();
   } else {
     _scene.draw();

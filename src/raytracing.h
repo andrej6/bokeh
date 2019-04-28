@@ -11,6 +11,7 @@
 #include "mesh.h"
 #include "image.h"
 #include "material.h"
+#include "threads.h"
 
 class Face;
 class Scene;
@@ -143,20 +144,31 @@ class RayTracing {
     RayTracing(const Scene *scene, bool progressive = true)
       : _scene(scene), _image(Canvas::width(), Canvas::height()),
       _dirty(true), _tex(0), _fbo(0),
-      _trace_x(0), _trace_y(0)
+      _trace_x(0), _trace_y(0),
+      _section(0), _threaded_raytrace(false)
     {
       set_progressive(progressive);
+      _section_lock = create_mutex();
     }
 
     RayTracing(const Scene *scene, unsigned width, unsigned height, bool progressive = true) :
       _scene(scene), _image(width, height), _dirty(true), _fbo(0),
-      _trace_x(0), _trace_y(0)
+      _trace_x(0), _trace_y(0),
+      _section(0), _threaded_raytrace(false)
     {
       set_progressive(progressive);
+      _section_lock = create_mutex();
+    }
+
+    ~RayTracing() {
+      stop_threaded_raytrace();
+      destroy_mutex(_section_lock);
     }
 
     void draw();
     bool trace_next_pixel();
+    void start_threaded_raytrace();
+    void stop_threaded_raytrace();
 
     void reset() {
       _image.clear_to_color(pixel_color(0,0,0,1));
@@ -181,6 +193,33 @@ class RayTracing {
     }
     bool increase_divs();
 
+    bool next_section(unsigned &x0, unsigned &y0, unsigned &w, unsigned &h) {
+      if (!_threaded_raytrace) {
+        return false;
+      }
+
+      lock_mutex(_section_lock);
+      unsigned sec = _section++;
+      unlock_mutex(_section_lock);
+
+      unsigned div_w = ceil((double) _image.width() / _starting_divs_x);
+      unsigned div_h = ceil((double) _image.height() / _starting_divs_y);
+
+      unsigned x = sec % _starting_divs_x;
+      unsigned y = sec / _starting_divs_x;
+
+      if (y >= _starting_divs_y) {
+        return false;
+      }
+
+      x0 = x * div_w;
+      y0 = y * div_h;
+      w = std::min(div_w, _image.width() - x0);
+      h = std::min(div_h, _image.height() - y0);
+
+      return true;
+    }
+
     const Scene *_scene;
     Image _image;
 
@@ -192,6 +231,12 @@ class RayTracing {
     unsigned _starting_divs_x, _starting_divs_y;
     unsigned _divs_x, _divs_y;
     unsigned _trace_x, _trace_y;
+
+    std::vector<thread_id> _threads;
+    mutex_t _section_lock;
+    unsigned _section;
+    bool _threaded_raytrace;
+    friend void raytracer_thread(void*);
 };
 
 #endif /* RAYTRACING_H_ */

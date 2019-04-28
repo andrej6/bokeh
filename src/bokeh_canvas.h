@@ -56,6 +56,7 @@ class BokehCanvas : public Canvas {
     MouseInfo _mouse;
     bool _draw_axes;
     bool _draw_raytracing;
+    bool _progressive_raytracing;
 
     RayTracing _raytracing;
 };

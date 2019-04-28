@@ -60,30 +60,32 @@ void join_thread(thread_id tid) {
 }
 
 void join_all_threads() {
-# ifdef WINDOWS
-  thread_t *thread_array = new thread_t[_threads.size()];
-  unsigned i = 0;
-# endif
-
   for (auto itr = _threads.begin(); itr != _threads.end(); ++itr) {
 #   ifdef UNIX
     pthread_join(itr->second, NULL);
 #   else
-    thread_array[i];
-    ++i;
+    WaitForSingleObject(itr->second, INFINITE);
+    CloseHandle(itr->second);
 #   endif
   }
 
-# ifdef WINDOWS
-  WaitForMultipleObjects(_threads.size(), thread_array, TRUE, INFINITE);
-  for (i = 0; i < _threads.size(); ++i) {
-    CloseHandle(thread_array[i]);
-  }
-  delete [] thread_array;
-# endif
-
   _threads.clear();
   _next_thread_id = 1;
+}
+
+bool try_join_thread(thread_id tid) {
+  auto itr = _threads.find(tid);
+  if (itr == _threads.end()) {
+    return true;
+  }
+
+  thread_t thread = itr->second;
+
+# ifdef UNIX
+  return pthread_tryjoin_np(thread, NULL) == 0;
+# else
+  return WaitForSingleObject(thread, 0) == WAIT_OBJECT_0;
+# endif
 }
 
 mutex_t create_mutex() {
