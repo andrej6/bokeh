@@ -6,9 +6,10 @@
 #include <glm/glm.hpp>
 
 #include "camera.h"
-#include "mesh.h"
-#include "raytracing.h"
 #include "kd_tree.h"
+#include "mesh.h"
+#include "primitive.h"
+#include "raytracing.h"
 
 class Scene {
   public:
@@ -43,6 +44,9 @@ class Scene {
       if (_camera) {
         delete _camera;
       }
+      for (unsigned i = 0; i < _primitives.size(); ++i) {
+        delete _primitives[i];
+      }
     }
 
     static Scene from_scn(const char *filename);
@@ -74,6 +78,7 @@ class Scene {
     glm::vec3 trace_ray(const Ray &ray, RayTreeNode *treenode, int level, int type) const;
 
     std::vector<MeshInstance> _mesh_instances;
+    std::vector<Primitive*> _primitives;
     DebugViz _dbviz;
     std::vector<size_t> _lights;
     RayTree _raytree;

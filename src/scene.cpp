@@ -123,7 +123,25 @@ Scene Scene::from_scn(const char *filename) {
         }
       }
 
-      scene._mesh_instances.push_back(MeshInstance(get_mesh_id(tokens[1].c_str())));
+      Mesh::mesh_id id = get_mesh_id(tokens[1].c_str());
+      if (id == Mesh::NONE) {
+        glerr() << "ERROR: cannot create an instance of a mesh that does not exist" << std::endl;
+        exit(-1);
+      }
+
+      scene._mesh_instances.push_back(MeshInstance(id));
+    } else if (tokens[0] == "sphere") {
+      if (tokens.size() != 6) {
+        glerr() << "ERROR: incorrect number of parameters for sphere" << std::endl;
+        exit(-1);
+      }
+
+      float radius = parse_float(tokens, 1);
+      glm::vec3 center = parse_vec3(tokens, 2);
+      Material::mtl_id mtl_id = get_mtl_id(tokens[5].c_str());
+
+      scene._primitives.push_back(new Sphere(center, radius));
+      scene._primitives.back()->set_mtl(mtl_id);
     } else if (tokens[0] == "mtl"
             || tokens[0] == "scale"
             || tokens[0] == "rotate"
@@ -187,6 +205,13 @@ Scene Scene::from_scn(const char *filename) {
     }
   }
 
+  if (!scene._mesh_instances.empty()) {
+    const Material *mtl = scene._mesh_instances.back().material();
+    if (glm::length(mtl->emitted()) > EPSILON) {
+      scene._lights.push_back(scene._mesh_instances.size() - 1);
+    }
+  }
+
   return scene;
 }
 
@@ -198,6 +223,12 @@ void Scene::draw() {
     _mesh_instances[i].set_viewmat(view);
     _mesh_instances[i].set_projmat(proj);
     _mesh_instances[i].draw();
+  }
+
+  for (unsigned i = 0; i < _primitives.size(); ++i) {
+    _primitives[i]->set_viewmat(view);
+    _primitives[i]->set_projmat(proj);
+    _primitives[i]->draw();
   }
 
   _raytree.set_viewmat(view);
@@ -247,6 +278,10 @@ glm::vec3 Scene::trace_ray(const Ray &ray, RayTreeNode *treenode, int level, int
     rayhit.intersect_mesh(_mesh_instances[i]);
   }
 
+  for (unsigned i = 0; i < _primitives.size(); ++i) {
+    _primitives[i]->intersect(rayhit);
+  }
+
   glm::vec3 raytree_color;
   if (type == RAY_TYPE_ROOT) {
     raytree_color = glm::vec3(0, 0, 1);
@@ -266,7 +301,9 @@ glm::vec3 Scene::trace_ray(const Ray &ray, RayTreeNode *treenode, int level, int
   const Material *mtl = rayhit.material();
   if (mtl) {
     if (mtl->emittance_power() > 0.0) {
-      return glm::vec3(1.0, 1.0, 1.0);
+      glm::vec3 ret = mtl->emitted();
+      ret += float(atan(mtl->emittance_power()) / PI)*(glm::vec3(1.0) - mtl->emitted());
+      return ret;
     } else {
       color += mtl->ambient();
     }
@@ -285,11 +322,18 @@ glm::vec3 Scene::trace_ray(const Ray &ray, RayTreeNode *treenode, int level, int
       glm::vec3 origin(rayhit.intersection_point() + EPSILON*rayhit.norm());
 
       RayHit lightray(origin, facepoint-origin);
-      lightray.intersect_mesh(*mi);
+      if (!lightray.intersect_mesh(*mi)) {
+        --j;
+        continue;
+      }
       float light_t = lightray.t();
 
       for (unsigned m = 0; m < _mesh_instances.size(); ++m) {
         lightray.intersect_mesh(_mesh_instances[m]);
+      }
+
+      for (unsigned m = 0; m < _primitives.size(); ++m) {
+        _primitives[m]->intersect(lightray);
       }
 
       if (treenode) {

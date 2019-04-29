@@ -212,6 +212,7 @@ class Mesh {
     // Create a Mesh by loading the given OBJ file
     static Mesh from_obj(std::istream &infile);
 
+    Mesh() : _inited_buf(false), _vbuf(0), _vao(0) {}
     Mesh(Mesh &&other);
     ~Mesh();
 
@@ -251,12 +252,10 @@ class Mesh {
     size_t faces_size() const { return _faces.size(); }
 
     const KDTree &kd_tree() const { return _kd_tree; }
+    void compute_vert_norms();
 
   private:
-    Mesh() : _inited_buf(false), _vbuf(0), _vao(0) {}
-
     Edge *add_edge(Vertex *root_vert, Vertex *vert, Face *face);
-    void compute_vert_norms();
 
     std::vector<Vertex*> _vertices;
     std::vector<Edge*> _edges;
@@ -289,10 +288,16 @@ Mesh::mesh_id add_mesh_from_obj(const char *name, const char *obj_filename);
 // is in the store.
 Mesh::mesh_id get_mesh_id(const char *name);
 
+// Move a Mesh into the global Mesh store, assigning it the given name.
+Mesh::mesh_id add_mesh(const char *name, Mesh &&mesh);
+
 // An instance of a Mesh with arbitrary transformation and material.
 class MeshInstance {
   public:
     // Create a new instance of the Mesh with the given ID.
+    MeshInstance() :
+      _id(Mesh::NONE), _mtl_id(Material::NONE),
+      _translate(0.0), _scale(1.0), _rotate_mat(1.0) {}
     MeshInstance(Mesh::mesh_id id) :
       _id(id), _mtl_id(Material::NONE), _translate(0.0), _scale(1.0), _rotate_mat(1.0) {}
     MeshInstance(const MeshInstance&) = default;

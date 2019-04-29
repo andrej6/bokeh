@@ -18,10 +18,46 @@
 #           6: ambient, no reflection, refraction
 # Other material properties from the standard MTL format are not supported.
 newmtl WhiteLight
-Kd 0.0 0.0 0.0
+Kd 1.0 1.0 1.0
 Ks 0.0 0.0 0.0
 Ke 1.0 1.0 1.0
 Ne 70.0
+
+newmtl RedLight
+Kd 1.0 1.0 1.0
+Ks 0.0 0.0 0.0
+Ke 1.0 0.0 0.0
+Ne 100.0
+
+newmtl GreenLight
+Kd 1.0 1.0 1.0
+Ks 0.0 0.0 0.0
+Ke 0.0 1.0 0.0
+Ne 100.0
+
+newmtl BlueLight
+Kd 1.0 1.0 1.0
+Ks 0.0 0.0 0.0
+Ke 0.0 0.0 1.0
+Ne 100.0
+
+newmtl YellowLight
+Kd 1.0 1.0 1.0
+Ks 0.0 0.0 0.0
+Ke 1.0 1.0 0.0
+Ne 100.0
+
+newmtl MagentaLight
+Kd 1.0 1.0 1.0
+Ks 0.0 0.0 0.0
+Ke 1.0 0.0 1.0
+Ne 100.0
+
+newmtl CyanLight
+Kd 1.0 1.0 1.0
+Ks 0.0 0.0 0.0
+Ke 0.0 1.0 1.0
+Ne 100.0
 
 newmtl GreyDiffuse
 Kd 0.7 0.7 0.7
@@ -50,7 +86,7 @@ illum 3
 newmtl BlackMirror
 Kd 0.1 0.1 0.1
 Ka 0.1 0.1 0.1
-Ks 0.9 0.8 0.8
-Ns 100.0
+Ks 0.9 0.7 0.7
+Ns 120.0
 Ke 0.0 0.0 0.0
 illum 3

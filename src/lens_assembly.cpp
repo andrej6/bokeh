@@ -281,5 +281,5 @@ Ray LensAssembly::generate_ray(float x, float y) const {
   origin = rayhit.ray().origin();
   direction = rayhit.ray().direction();
 
-  return Ray(glm::vec3(origin.x, origin.y, 0.0), direction);
+  return Ray(glm::vec3(origin.x, origin.y, origin.z - _surfaces.front().vertex()), direction);
 }

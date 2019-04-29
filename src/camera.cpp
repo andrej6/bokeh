@@ -147,6 +147,7 @@ LensCamera::LensCamera(
   PerspectiveCamera(pos, poi, up, angle), _lens_assembly(la) {}
 
 Ray LensCamera::cast_ray(double x, double y) const {
+  float mm_per_unit = 10.0;
   float film_height = 35.0;
   float film_width = film_height * Canvas::aspect();
 
@@ -161,7 +162,7 @@ Ray LensCamera::cast_ray(double x, double y) const {
   inverse_view = glm::inverse(inverse_view);
 
   glm::vec3 unmod_origin = unmodded.origin();
-  glm::vec3 scaled_origin(unmod_origin.x / film_width, unmod_origin.y / film_height, 0.0);
+  glm::vec3 scaled_origin(unmod_origin / mm_per_unit);
 
   glm::vec3 origin = apply_homog(inverse_view, scaled_origin, VEC3_POINT);
   glm::vec3 direction = apply_homog(inverse_view, unmodded.direction(), VEC3_DIR);

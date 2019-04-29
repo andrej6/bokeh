@@ -240,7 +240,6 @@ void raytracer_thread(void *argptr) {
   RayTracing *rt = (RayTracing*) argptr;
   unsigned x0, y0, w, h;
   while (rt->next_section(x0, y0, w, h)) {
-    std::cout << "Thread section " << x0 << ' ' << y0 << ' ' << w << ' ' << h << std::endl;
     for (unsigned i = 0; i < w && rt->_threaded_raytrace; ++i) {
       for (unsigned j = 0; j < h && rt->_threaded_raytrace; ++j) {
         glm::vec3 color = rt->_scene->trace_ray(x0 + i, y0 + j, rt->_scene->ray_bounces());
@@ -260,8 +259,6 @@ void RayTracing::start_threaded_raytrace() {
   for (unsigned i = 0; i < PROCESSOR_COUNT; ++i) {
     _threads.push_back(create_thread(raytracer_thread, (void*) this));
   }
-
-  std::cout << "Created " << PROCESSOR_COUNT << " threads" << std::endl;
 }
 
 void RayTracing::stop_threaded_raytrace() {

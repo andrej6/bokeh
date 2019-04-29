@@ -224,7 +224,9 @@ bool KDTree::contains_face(const Face *f) const {
     return _child1->contains_face(f);
   } else if (split == SPLIT_RIGHT && _child2) {
     return _child2->contains_face(f);
-  } else if (split == SPLIT_NEITHER || (!_child1 && !_child2)) {
+  } else if (split == SPLIT_NEITHER && _child1 && _child2) {
+    return _child1->contains_face(f) && _child2->contains_face(f);
+  } else {
     for (unsigned i = 0; i < _faces.size(); ++i) {
       if (_faces[i] == f) {
         return true;
@@ -318,18 +320,25 @@ void KDTree::construct(const sorted_data &sorted, const BBox &bbox) {
     } else if (splitx == SPLIT_RIGHT) {
       sorted2.by_x.push_back(sorted.by_x[i]);
     } else {
-      _faces.push_back(sorted.by_x[i]);
+      sorted1.by_x.push_back(sorted.by_x[i]);
+      sorted2.by_x.push_back(sorted.by_x[i]);
     }
 
     if (splity == SPLIT_LEFT) {
       sorted1.by_y.push_back(sorted.by_y[i]);
     } else if (splity == SPLIT_RIGHT) {
       sorted2.by_y.push_back(sorted.by_y[i]);
+    } else {
+      sorted1.by_y.push_back(sorted.by_y[i]);
+      sorted2.by_y.push_back(sorted.by_y[i]);
     }
 
     if (splitz == SPLIT_LEFT) {
       sorted1.by_z.push_back(sorted.by_z[i]);
     } else if (splitz == SPLIT_RIGHT) {
+      sorted2.by_z.push_back(sorted.by_z[i]);
+    } else {
+      sorted1.by_z.push_back(sorted.by_z[i]);
       sorted2.by_z.push_back(sorted.by_z[i]);
     }
   }

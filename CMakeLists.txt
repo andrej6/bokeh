@@ -18,6 +18,7 @@ foreach(basename
     main.cpp
     mesh.cpp
     material.cpp
+    primitive.cpp
     raytracing.cpp
     scene.cpp
     shader_store.cpp

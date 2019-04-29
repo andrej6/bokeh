@@ -626,6 +626,11 @@ static struct MeshManager {
 } mesh_manager;
 
 Mesh::mesh_id add_mesh_from_obj(const char *name, const char *obj_filename) {
+  mesh_name_map_t::iterator itr = mesh_manager.mesh_names.find(name);
+  if (itr != mesh_manager.mesh_names.end()) {
+    return itr->second;
+  }
+
   Mesh::mesh_id id = next_mesh_id;
   ++next_mesh_id;
 
@@ -646,6 +651,21 @@ Mesh::mesh_id get_mesh_id(const char *name) {
   } else {
     return itr->second;
   }
+}
+
+Mesh::mesh_id add_mesh(const char *name, Mesh &&mesh) {
+  mesh_name_map_t::iterator itr = mesh_manager.mesh_names.find(name);
+  if (itr != mesh_manager.mesh_names.end()) {
+    return itr->second;
+  }
+
+  Mesh::mesh_id id = next_mesh_id++;
+
+  Mesh *m = new Mesh(std::move(mesh));
+  mesh_manager.meshes.insert(std::make_pair(id, m));
+  mesh_manager.mesh_names.insert(std::make_pair(name, id));
+
+  return id;
 }
 
 void MeshInstance::draw() {
@@ -678,7 +698,7 @@ void MeshInstance::draw() {
   glm::vec3 ambient = mtl->ambient_on() ? mtl->ambient() : glm::vec3(0, 0, 0);
   float shiny = mtl->shiny();
 
-  glm::vec3 lightpos(10, 10, 10);
+  glm::vec3 lightpos(10, -10, 10);
   glm::vec3 lightdiffuse(1.0, 1.0, 1.0);
   glm::vec3 lightspecular(1.0, 1.0, 1.0);
   glm::vec3 lightambient(0.4, 0.3, 0.5);
