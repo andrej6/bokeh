@@ -147,7 +147,7 @@ LensCamera::LensCamera(
   PerspectiveCamera(pos, poi, up, angle), _lens_assembly(la) {}
 
 Ray LensCamera::cast_ray(double x, double y) const {
-  float mm_per_unit = 10.0;
+  float mm_per_unit = 50.0;
   float film_height = 35.0;
   float film_width = film_height * Canvas::aspect();
 

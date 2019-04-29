@@ -261,7 +261,8 @@ glm::vec3 Scene::trace_ray(double x, double y, RayTreeNode *treenode, int bounce
     double rand_x = randf() - 0.5, rand_y = randf() - 0.5;
     double norm_x = (center_x + rand_x) / Canvas::width();
     double norm_y = (center_y + rand_y) / Canvas::height();
-    color += trace_ray(_camera->cast_ray(norm_x, norm_y), treenode, bounces + 1, RAY_TYPE_ROOT);
+    glm::vec3 raycolor = trace_ray(_camera->cast_ray(norm_x, norm_y), treenode, bounces + 1, RAY_TYPE_ROOT);
+    color += raycolor;
   }
 
   return color / float(_lens_samples);

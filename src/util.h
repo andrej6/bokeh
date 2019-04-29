@@ -6,11 +6,20 @@
 #include <vector>
 
 #include <cstdint>
+#include <algorithm>
+#include <cmath>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp>
+
+#ifdef UNIX
+template <typename T>
+static inline T min(T x, T y) {
+  return std::min(x, y);
+}
+#endif
 
 #define EPSILON 0.00075f
 extern const double PI;

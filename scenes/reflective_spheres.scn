@@ -22,8 +22,8 @@ bgc 0.6 0.5 0.8
 # (position, point of interest, up vector) can be given at any time after
 # the camera specification, and repeated camera properties will override
 # previous definitions.
-camera lens 30.0 100_f1_35.la
-#camera perspective 30.0
+#camera lens 30.0 100_f1_35.la
+camera perspective 30.0
 cam_position -5.5406 -5.42681 2.02057
 cam_poi -1.5208 -0.455876 0.388196
 cam_up 0.0 0.0 1.0

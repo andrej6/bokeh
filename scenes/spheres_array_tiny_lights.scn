@@ -22,7 +22,7 @@ bgc 0.1 0.0 0.05
 # (position, point of interest, up vector) can be given at any time after
 # the camera specification, and repeated camera properties will override
 # previous definitions.
-camera lens 30.0 100_f1_35_test.la
+camera lens 30.0 100_f1_35.la
 cam_position -5.5406 -5.42681 2.02057
 cam_poi -1.5208 -0.455876 0.388196
 cam_up 0.0 0.0 1.0
@@ -46,37 +46,37 @@ scale 5.0 5.0 5.0
 
 mesh_instance square
 mtl RedLight
-scale 0.15 0.15 0.15
+scale 0.25 0.25 0.25
 translate 0.0 5.0 2.0
 rotate 1.0 0.0 0.0    90.0
 
 mesh_instance square
 mtl BlueLight
-scale 0.15 0.15 0.15
+scale 0.25 0.25 0.25
 translate -3.0 5.0 2.0
 rotate 1.0 0.0 0.0    90.0
 
 mesh_instance square
 mtl GreenLight
-scale 0.15 0.15 0.15
+scale 0.25 0.25 0.25
 translate 3.0 5.0 2.0
 rotate 1.0 0.0 0.0    90.0
 
 mesh_instance square
 mtl YellowLight
-scale 0.15 0.15 0.15
+scale 0.25 0.25 0.25
 translate 0.0 5.0 5.0
 rotate 1.0 0.0 0.0    90.0
 
 mesh_instance square
 mtl MagentaLight
-scale 0.15 0.15 0.15
+scale 0.25 0.25 0.25
 translate -3.0 5.0 5.0
 rotate 1.0 0.0 0.0    90.0
 
 mesh_instance square
 mtl CyanLight
-scale 0.15 0.15 0.15
+scale 0.25 0.25 0.25
 translate 3.0 5.0 5.0
 rotate 1.0 0.0 0.0    90.0
 
