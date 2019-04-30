@@ -1,0 +1,116 @@
+@article{JooEtAl2016,
+    author = {Joo, Hyuntae and Kwon, Soonhyeon and Lee, Sangmin and Eisemann, Elmar and Lee, Sungkil},
+    title = {Efficient Ray Tracing Through Aspheric Lenses and Imperfect Bokeh Synthesis},
+    journal = {Computer Graphics Forum},
+    volume = {35},
+    number = {4},
+    pages = {99-105},
+    keywords = {Categories and Subject Descriptors (according to ACM CCS), I.3.3
+      Computer Graphics: Picture/Image Generation—Display Algorithms},
+    abstract = {We present an efficient ray-tracing technique to render bokeh
+      effects produced by parametric aspheric lenses. Contrary to conventional
+        spherical lenses, aspheric lenses do generally not permit a simple
+        closed-form solution of ray-surface intersections. We propose a
+        numerical root-finding approach, which uses tight proxy surfaces to
+        ensure a good initialization and convergence behavior. Additionally, we
+        simulate mechanical imperfections resulting from the lens fabrication
+        via a texture-based approach. Fractional Fourier transform and spectral
+        dispersion add additional realism to the synthesized bokeh effect. Our
+        approach is well-suited for execution on graphics processing units
+        (GPUs) and we demonstrate complex defocus-blur and lens-flare effects.},
+    year = {2016}
+}
+
+
+@Article{McGraw2015,
+    author="McGraw, Tim",
+    title="Fast Bokeh effects using low-rank linear filters",
+    journal="The Visual Computer",
+    year="2015",
+    month="May",
+    day="01",
+    volume="31",
+    number="5",
+    pages="601--611",
+    abstract="We present a method for faster and more flexible approximation of
+      camera defocus effects given a focused image of a virtual scene and depth
+      map. Our method leverages the advantages of low-rank linear filtering by
+      reducing the problem of 2D convolution to multiple 1D convolutions, which
+      significantly reduces the computational complexity of the filtering
+      operation. In the case of rank 1 filters (e.g., the box filter and
+          Gaussian filter), the kernel is described as `separable' since it can
+      be implemented as a horizontal 1D convolution followed by a 1D vertical
+      convolution. While many filter kernels which result in bokeh effects
+      cannot be approximated closely by separable kernels, they can be
+      effectively approximated by low-rank kernels. We demonstrate the speed and
+      flexibility of low-rank filters by applying them to image blurring,
+    tilt-shift postprocessing, and depth-of-field simulation, and also analyze
+      the approximation error for several aperture shapes.",
+    issn="1432-2315",
+}
+
+@Article{Wu2010,
+    author="Wu, Jiaze and Zheng, Changwen and Hu, Xiaohui and Wang, Yang and Zhang, Liqiang",
+    title="Realistic rendering of bokeh effect based on optical aberrations",
+    journal="The Visual Computer",
+    year="2010",
+    month="Jun",
+    day="01",
+    volume="26",
+    number="6",
+    pages="555--563",
+    abstract="Bokeh effect is an important characteristic for realistic image
+      synthesis. However, existing bokeh rendering methods are incapable of
+      simulating realistic bokeh effects due to not taking into account optical
+      characteristics of real lenses, especially optical aberrations. In this
+      paper, a novel realistic bokeh rendering method, based on an accurate
+      camera lens model and distributed ray tracing, is presented. An optical
+      analysis of the relationship between bokeh and optical aberrations,
+    including spherical aberration, coma, astigmatism and field curvature, is
+      firstly introduced. Based on this analysis, a physically-based camera lens
+      model, which takes detailed lens prescription as input, is then introduced
+      for accurately modeling the aberrations. The position and diameter of the
+        entrance and exit pupils are calculated by tracing rays inside the lens
+          for achieving efficient ray sampling, and a general sequential ray
+            tracing algorithm is proposed to better combine with bidirectional
+              ray tracing. Furthermore, correct integration between the lens
+              model and bidirectional ray tracing is also analyzed. The
+              rendering results demonstrate a variety of realistic bokeh effects
+              caused by the aberrations.",
+    issn="1432-2315",
+}
+
+@Article{Wu2013,
+    author="Wu, Jiaze and Zheng, Changwen and Hu, Xiaohui and Xu, Fanjiang",
+    title="Rendering realistic spectral bokeh due to lens stops and aberrations",
+    journal="The Visual Computer",
+    year="2013",
+    month="Jan",
+    day="01",
+    volume="29",
+    number="1",
+    pages="41--52",
+    abstract="Creating bokeh effect in synthesized images can improve
+      photorealism and emphasize interesting subjects. Therefore, we present a
+      novel method for rendering realistic bokeh effects, especially chromatic
+      effects, which are absent for existing methods. This new method refers to
+      two key techniques: an accurate dispersive lens model and an efficient
+      spectral rendering scheme. This lens model is implemented based on optical
+      data of real lenses and considers wavelength dependency of physical lenses
+      by introducing a sequential dispersive ray tracing algorithm inside this
+      model. This spectral rendering scheme is proposed to support rendering of
+      lens dispersion and integration between this new model and bidirectional
+      ray tracing. The rendering experiments demonstrate that our method is able
+      to simulate realistic spectral bokeh effects caused by lens stops and
+      aberrations, especially chromatic aberration, and feature high rendering
+      efficiency.",
+    issn="1432-2315",
+}
+
+@Book{Greivenkamp2004,
+  author="Greivenkamp, John E.",
+  title="Field Guide to Geometrical Optics",
+  publisher="SPIE Press",
+  series="SPIE Field Guides",
+  year="2004",
+}
