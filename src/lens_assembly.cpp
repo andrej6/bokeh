@@ -257,6 +257,11 @@ Ray LensAssembly::generate_ray(float x, float y) const {
         // Ray didn't make it through the lenses
         return generate_ray(x, y);
       }
+
+      glm::vec3 int_pt = rayhit.intersection_point();
+      if (glm::length(glm::vec2(int_pt.x, int_pt.y)) > _surfaces[i].aperture_radius()) {
+        return generate_ray(x, y);
+      }
     }
 
     float index_a = _indices[i+1];
