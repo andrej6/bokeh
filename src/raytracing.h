@@ -185,7 +185,7 @@ class RayTracing {
     void set_progressive(bool progressive) {
       if (progressive) {
         _starting_divs_y = _divs_y = _image.height() / 20;
-        _starting_divs_x = _divs_x = std::ceil(Canvas::aspect() * _divs_y);
+        _starting_divs_x = _divs_x = _image.width() / 20;
       } else {
         _starting_divs_y = _divs_y = _image.height();
         _starting_divs_x = _divs_x = _image.width();
